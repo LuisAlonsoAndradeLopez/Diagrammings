@@ -1,0 +1,55 @@
+body {
+  background-color: #E7E7E7;
+}
+body header {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  margin: 10px;
+  background-color: #FFFFFF;
+}
+body header #diagrammings-title {
+  font-family: sans-serif;
+  font-size: 34px;
+  margin-right: 30%;
+}
+body header #export-button {
+  margin-right: 18px;
+  padding: 15px 30px;
+  background-color: #4998ff;
+  color: #FFFFFF;
+  font-size: 20px;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+body header #export-button :hover {
+  background-color: rgb(58, 77, 253);
+  transform: scale(1.05);
+}
+body #diagramming-content {
+  display: flex;
+  justify-content: center;
+  margin: 20px;
+  gap: 30px;
+}
+body #diagramming-content #diagrams-elements-selector-div {
+  width: 15%;
+  height: 520px;
+  border-radius: 15px;
+  background-color: #FFFFFF;
+}
+body #diagramming-content #diagrams-maker-canvas {
+  width: 55%;
+  height: 520px;
+  background-color: #FFFFFF;
+}
+body #diagramming-content #diagrams-elements-editor-div {
+  width: 25%;
+  height: 520px;
+  border-radius: 10px;
+  background-color: #FFFFFF;
+}
+
+/*# sourceMappingURL=styles.css.map */
