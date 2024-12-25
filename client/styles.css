@@ -1,5 +1,6 @@
 body {
   background-color: #E7E7E7;
+  font-family: sans-serif;
 }
 body header {
   display: flex;
@@ -9,7 +10,6 @@ body header {
   background-color: #FFFFFF;
 }
 body header #diagrammings-title {
-  font-family: sans-serif;
   font-size: 34px;
   margin-right: 30%;
 }
@@ -35,10 +35,36 @@ body #diagramming-content {
   gap: 30px;
 }
 body #diagramming-content #diagrams-elements-selector-div {
-  width: 15%;
+  width: 20%;
   height: 520px;
   border-radius: 15px;
   background-color: #FFFFFF;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-selector-header-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer .diagram-element {
+  display: block;
+  width: 100px;
+  height: 75px;
+  cursor: grab;
 }
 body #diagramming-content #diagrams-maker-canvas {
   width: 55%;
@@ -50,6 +76,18 @@ body #diagramming-content #diagrams-elements-editor-div {
   height: 520px;
   border-radius: 10px;
   background-color: #FFFFFF;
+}
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+    gap: 20px;
+  }
+  body #diagrams-elements-selector-div,
+  body #diagrams-maker-canvas,
+  body #diagrams-elements-editor-div {
+    width: 100%;
+    height: auto;
+  }
 }
 
 /*# sourceMappingURL=styles.css.map */

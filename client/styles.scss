@@ -1,5 +1,6 @@
 body {
     background-color: #E7E7E7;
+    font-family: sans-serif;
     
     header {
         display: flex;
@@ -9,7 +10,6 @@ body {
         background-color: #FFFFFF;
 
         #diagrammings-title {
-            font-family: sans-serif;
             font-size: 34px;
             margin-right: 30%;
         }
@@ -38,11 +38,41 @@ body {
         margin: 20px;
         gap: 30px;
 
-        #diagrams-elements-selector-div {
-            width: 15%;
+        #diagrams-elements-selector-div {     
+            width: 20%;
             height: 520px;
             border-radius: 15px;
             background-color: #FFFFFF;
+            overflow-x: hidden;
+            overflow-y: scroll;
+
+            #diagrams-elements-selector-header-div {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #diagrams-elements-div {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+
+                .diagram-elements-organizer {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+
+                    .diagram-element {
+                        display: block;
+                        width: 100px;
+                        height: 75px;
+                        cursor: grab;
+                    }
+                }
+            }
         }
         
         #diagrams-maker-canvas {
@@ -57,5 +87,19 @@ body {
             border-radius: 10px;
             background-color: #FFFFFF;
         }        
+    }
+
+
+    // Media query for smaller screens
+    @media (max-width: 768px) {
+        flex-direction: column; // Stack elements vertically
+        gap: 20px;
+
+        #diagrams-elements-selector-div,
+        #diagrams-maker-canvas,
+        #diagrams-elements-editor-div {
+            width: 100%;
+            height: auto; // Adjust height to fit content dynamically
+        }
     }
 }
