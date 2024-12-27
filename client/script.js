@@ -2,29 +2,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvasContainer = document.getElementById('diagramming-content');
   const diagramsMakerCanvasHtmlElement = document.getElementById('diagrams-maker-canvas');
   const diagramsMakerCanvas = new fabric.Canvas(diagramsMakerCanvasHtmlElement);
-
-  // Add dragstart event to each image
   const diagramElements = document.querySelectorAll('.diagram-element');
+
+  let selectedCanvasObjects = null;
+  let copiedCanvasObjects = null;
+
   diagramElements.forEach((element) => {
     element.addEventListener('dragstart', (event) => {
       event.dataTransfer.setData('text/plain', event.target.src);
-      console.log('Drag started:', event.target.src); // Debugging output
     });
   });
 
-  // Add dragover event to the canvas container
   canvasContainer.addEventListener('dragover', (event) => {
-    console.log('Drag over canvas'); // Debugging output
-    event.preventDefault(); // Allow dropping
-    console.log('Drag over canvas'); // Debugging output
+    event.preventDefault();
   });
 
-  // Add drop event to the canvas container
   canvasContainer.addEventListener('drop', (event) => {
     event.preventDefault();
-    console.log('Drop event triggered'); // Debugging output
 
-    // Get the dropped image source
     const imageUrl = event.dataTransfer.getData('text/plain');
 
     if (!imageUrl) {
@@ -32,29 +27,116 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Calculate drop position relative to the canvas
     const rect = diagramsMakerCanvasHtmlElement.getBoundingClientRect();
     const pointerX = event.clientX - (rect.left * 1.15);
     const pointerY = event.clientY - (rect.top * 1.325);
 
-    console.log(`Dropped at: ${pointerX}, ${pointerY}`); // Debugging output
-
-    // Add the image to the Fabric.js canvas
     fabric.Image.fromURL(imageUrl, (img) => {
       img.set({
         left: pointerX,
         top: pointerY,
-        selectable: true,       
+        selectable: true,
       });
 
       img.scaleToWidth(100);
       img.scaleToHeight(75);
 
       diagramsMakerCanvas.add(img);
-      diagramsMakerCanvas.renderAll(); // Ensure canvas is rendered after adding an image
+      diagramsMakerCanvas.renderAll();
+
+      img.on('mousedblclick', () => {
+        if (!img.linkedText) {
+          const textBox = new fabric.Textbox('Texto', {
+            left: img.left + img.width / 2,
+            top: img.top + img.height / 2,
+            fontSize: 16,
+            fontFamily: 'Arial',
+            fontStyle: 'normal',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            editable: true,
+            borderColor: 'gray',
+            cornerColor: 'blue',
+            lockUniScaling: true,
+            padding: 5,
+          });
+
+          diagramsMakerCanvas.add(textBox);
+          diagramsMakerCanvas.setActiveObject(textBox);
+          diagramsMakerCanvas.renderAll();
+
+          img.linkedText = textBox;
+        }
+      });
+
+      img.on('moving', () => {
+        if (img.linkedText) {
+          img.linkedText.left = img.left + 29.5;
+          img.linkedText.top = img.top + 29;
+          diagramsMakerCanvas.renderAll();
+        }
+      });
     });
   });
+
+  // Ensure the text box is linked to the image
+  diagramsMakerCanvas.on('object:moving', (event) => {
+    const obj = event.target;
+    if (obj && obj.linkedText) {
+      obj.linkedText.left = obj.left + 29.5;
+      obj.linkedText.top = obj.top + 29;
+      diagramsMakerCanvas.renderAll();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    selectedCanvasObjects = diagramsMakerCanvas.getActiveObject();
+
+    if (event.ctrlKey && event.key === 'c' && selectedCanvasObjects) {
+      copiedCanvasObjects = fabric.util.object.clone(selectedCanvasObjects);
+      console.log('Object copied:', copiedCanvasObjects);
+    }
+
+    if (event.ctrlKey && event.key === 'v' && copiedCanvasObjects) {
+      copiedCanvasObjects.set({
+        left: copiedCanvasObjects.left + 30,
+        top: copiedCanvasObjects.top + 30
+      });
+
+      diagramsMakerCanvas.add(copiedCanvasObjects);
+      diagramsMakerCanvas.setActiveObject(copiedCanvasObjects);
+      diagramsMakerCanvas.renderAll();
+
+      copiedCanvasObjects = fabric.util.object.clone(copiedCanvasObjects);
+      console.log('Object pasted:', copiedCanvasObjects);
+    }
+
+    if (event.key === 'Delete' && selectedCanvasObjects) {
+      alert('maravitupendo');
+      diagramsMakerCanvas.remove(selectedCanvasObjects);
+      diagramsMakerCanvas.renderAll();
+      console.log('Object deleted');
+    }
+  });
+
+  const exportButton = document.getElementById('export-button');
+  exportButton.addEventListener('click', () => {
+    const dataURL = diagramsMakerCanvas.toDataURL({
+      format: 'png',
+      quality: 1.0
+    });
+
+    const link = document.createElement('a');
+    link.href = dataURL;
+    link.download = 'canvas.png';
+    link.click();
+  })
 });
+
+
+
+
+
 
 /*
 document.addEventListener('DOMContentLoaded', function () {
@@ -95,154 +177,9 @@ document.addEventListener('DOMContentLoaded', function () {
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 
-
-  // Add dragstart event to the draggable image
-  startEndElementImg.addEventListener('dragstart', (event) => {
-    event.dataTransfer.setData('text/plain', event.target.src); // Pass the image source
-    console.log('Drag started'); // Debugging output
-  });
-
-  // Add dragover event to the canvas container
-  diagramsMakerCanvasHtmlElement.addEventListener('dragover', (event) => {
-    event.preventDefault(); // Allow dropping
-    console.log('Drag over canvas'); // Debugging output
-  });
-
-  // Add drop event to the canvas container
-  diagramsMakerCanvasHtmlElement.addEventListener('drop', (event) => {
-    event.preventDefault();
-
-    console.log('Drop event triggered'); // Debugging output
-
-    // Get the dropped image source
-    const imageUrl = event.dataTransfer.getData('text/plain');
-
-    if (!imageUrl) {
-      console.error('No image data found in drop event');
-      return;
-    }
-
-    // Calculate drop position relative to the canvas
-    const rect = diagramsMakerCanvasHtmlElement.getBoundingClientRect();
-    const pointerX = event.clientX - rect.left;
-    const pointerY = event.clientY - rect.top;
-
-    console.log(`Dropped at: ${pointerX}, ${pointerY}`); // Debugging output
-
-    // Add the image to the Fabric.js canvas
-    fabric.Image.fromURL(imageUrl, (img) => {
-      img.set({
-        left: pointerX,
-        top: pointerY,
-        selectable: true,
-      });
-      diagramsMakerCanvas.add(img);
-    });
-  });
 });
 
 */
-
-/*
- 
-    // Add a rectangle to the canvas
-    const rect = new fabric.Rect({
-      left: 100,
-      top: 100,
-      fill: 'red',
-      width: 100,
-      height: 100
-    });
-
-    diagramsMakerCanvas.add(rect);
-
-    // Add a circle
-    const circle = new fabric.Circle({
-      left: 300,
-      top: 100,
-      fill: 'blue',
-      radius: 50
-    });
-    diagramsMakerCanvas.add(circle);
-
-    // Add text
-    const text = new fabric.Text('Hello, Fabric.js!', {
-      left: 200,
-      top: 300,
-      fontSize: 30,
-      fill: 'green'
-    });
-    diagramsMakerCanvas.add(text);
-
-    // Add an image
-    fabric.Image.fromURL('https://via.placeholder.com/150', function (img) {
-      img.set({
-        left: 400,
-        top: 200,
-        scaleX: 0.5,
-        scaleY: 0.5
-      });
-      diagramsMakerCanvas.add(img);
-    });
-
-    // Save canvas state
-    const saveButton = document.createElement('button');
-    saveButton.textContent = 'Save Canvas';
-    document.body.appendChild(saveButton);
-
-    saveButton.addEventListener('click', () => {
-      const canvasState = JSON.stringify(diagramsMakerCanvas);
-      localStorage.setItem('canvasState', canvasState);
-      alert('Canvas saved!');
-    });
-
-    // Load canvas state
-    const loadButton = document.createElement('button');
-    loadButton.textContent = 'Load Canvas';
-    document.body.appendChild(loadButton);
-
-    loadButton.addEventListener('click', () => {
-      const canvasState = localStorage.getItem('canvasState');
-      if (canvasState) {
-        canvas.loadFromJSON(canvasState, canvas.renderAll.bind(diagramsMakerCanvas));
-        alert('Canvas loaded!');
-      } else {
-        alert('No saved canvas state found.');
-      }
-    });
-
-    const exportButton = document.createElement('button');
-    exportButton.textContent = 'Export as Image';
-    document.body.appendChild(exportButton);
-
-    exportButton.addEventListener('click', () => {
-      const dataURL = canvas.toDataURL({
-        format: 'png',
-        quality: 1.0
-      });
-      const link = document.createElement('a');
-      link.href = dataURL;
-      link.download = 'canvas.png';
-      link.click();
-    });
-  });
- */
-
-
-/*
-    // Enable object selection and modification
-    rect.set({
-    selectable: true
-    });
-    canvas.renderAll();
-
-    // Listen for events (e.g., object moving)
-    canvas.on('object:moving', function(e) {
-    console.log('Object is moving:', e.target);
-    });
- */
-
-
 
 /* Código de drag and drop funcional
 const canvas = new fabric.Canvas('diagrams-maker-canvas');
