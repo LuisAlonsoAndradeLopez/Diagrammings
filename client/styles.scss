@@ -1,20 +1,38 @@
 body {
     background-color: #E7E7E7;
     font-family: sans-serif;
-    
+
     header {
         display: flex;
         align-items: center;
-        justify-content: end;
+        justify-content: center;
         margin: 10px;
         background-color: #FFFFFF;
+
+        #help-button {
+            margin-left: 18px;
+            padding: 15px 30px;
+            background-color: #e66487;
+            color: #FFFFFF;
+            font-size: 20px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+
+            :hover {
+                background-color: rgb(58, 77, 253);
+                transform: scale(1.05);
+            }
+        }
 
         #diagrammings-title {
             font-size: 34px;
             margin-right: 30%;
+            margin-left: 30%;
         }
 
-        #export-button {            
+        #export-button {
             margin-right: 18px;
             padding: 15px 30px;
             background-color: #4998ff;
@@ -22,8 +40,8 @@ body {
             font-size: 20px;
             border: none;
             border-radius: 15px;
-            cursor: pointer;    
-            transition: transform 0.2s ease, background-color 0.2s ease;        
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
 
             :hover {
                 background-color: rgb(58, 77, 253);
@@ -34,11 +52,11 @@ body {
 
     #diagramming-content {
         display: flex;
-        justify-content: center;        
+        justify-content: center;
         margin: 20px;
         gap: 30px;
 
-        #diagrams-elements-selector-div {     
+        #diagrams-elements-selector-div {
             width: 20%;
             height: 520px;
             border-radius: 15px;
@@ -74,19 +92,19 @@ body {
                 }
             }
         }
-        
+
         #diagrams-maker-canvas {
             width: 55%;
             height: 520px;
             background-color: #FFFFFF;
         }
-        
+
         #diagrams-elements-editor-div {
             width: 25%;
             height: 520px;
             border-radius: 10px;
             background-color: #FFFFFF;
-        }        
+        }
     }
 
 
