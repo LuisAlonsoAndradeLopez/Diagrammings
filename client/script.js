@@ -15,6 +15,26 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedCanvasObjects = null;
   let copiedCanvasObjects = [];
 
+  
+  //Corregir, es para que si el cursor está en una imagen, mostrar su nombre
+  //const elementNameDisplay = document.createElement('div');
+  //elementNameDisplay.id = 'element-name';
+  //document.body.appendChild(elementNameDisplay);
+//
+  //diagramElements.forEach((img) => {
+  //  img.addEventListener('mouseover', (event) => {
+  //    const name = event.target.title;
+  //    elementNameDisplay.textContent = name;
+  //    elementNameDisplay.style.left = `${event.pageX + 10}px`;
+  //    elementNameDisplay.style.top = `${event.pageY + 10}px`;
+  //    elementNameDisplay.style.display = 'block';
+  //  });
+//
+  //  img.addEventListener('mouseout', () => {
+  //    elementNameDisplay.style.display = 'none';
+  //  });
+  //});
+
   diagramElements.forEach((element) => {
     element.addEventListener('dragstart', (event) => {
       event.dataTransfer.setData('text/plain', event.target.src);
@@ -50,6 +70,20 @@ document.addEventListener('DOMContentLoaded', () => {
       diagramsMakerCanvas.add(img);
       diagramsMakerCanvas.renderAll();
 
+      const centeredImages = [
+        'decision.png', 'document.png', 'input_output.png',
+        'off_page_reference.png', 'on_page_reference.png',
+        'process.png', 'start_end.png', 'use_case.png'
+      ];
+      const belowImages = ['actor.png'];
+      const aboveImages = ['system.png'];
+
+      const notRotatingImages = [
+        'actor.png', 'decision.png', 'document.png', 'input_output.png',
+        'off_page_reference.png', 'on_page_reference.png',
+        'process.png', 'start_end.png', 'system.png', 'use_case.png'
+      ];
+
       if (imageUrl.split('/').pop() !== 'asociation.png' && imageUrl.split('/').pop() !== 'dependency.png' &&
         imageUrl.split('/').pop() !== 'generalization.png' && imageUrl.split('/').pop() !== 'flow.png') {
         const textBox = new fabric.Textbox('Texto', {
@@ -68,48 +102,54 @@ document.addEventListener('DOMContentLoaded', () => {
           padding: 5
         });
 
-        if (imageUrl.split('/').pop() === 'decision.png' || imageUrl.split('/').pop() === 'document.png' ||
-          imageUrl.split('/').pop() === 'input_output.png' || imageUrl.split('/').pop() === 'off_page_reference.png' ||
-          imageUrl.split('/').pop() === 'on_page_reference.png' || imageUrl.split('/').pop() === 'process.png' ||
-          imageUrl.split('/').pop() === 'start_end.png' || imageUrl.split('/').pop() === 'use_case.png') {
+        const imageName = imageUrl.split('/').pop();
+
+        if (centeredImages.includes(imageName)) {
           textBox.set({
-            left: img.left + img.getScaledWidth() / 2 - textBox.width / 2, 
-            top: img.top + img.getScaledHeight() / 2 - textBox.height / 2 
+            left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
+            top: img.top + img.getScaledHeight() / 2 - textBox.height / 2
           });
-        } else if (imageUrl.split('/').pop() === 'actor.png') {
+        } else if (belowImages.includes(imageName)) {
           textBox.set({
-            left: img.left + img.getScaledWidth() / 2 - textBox.width / 2, 
-            top: img.top + img.getScaledHeight() + 10 
+            left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
+            top: img.top + img.getScaledHeight() + 10
           });
-        } else if (imageUrl.split('/').pop() === 'system.png') {
+        } else if (aboveImages.includes(imageName)) {
           textBox.set({
-            left: img.left + img.getScaledWidth() / 2 - textBox.width / 2, 
-            top: img.top + img.getScaledHeight() - 10 
+            left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
+            top: img.top - textBox.height + 10
+          });
+        }
+
+        if (notRotatingImages.includes(imageName)) {
+          img.set({
+            hasRotatingPoint: false,
+            lockRotation: true
+          });
+
+          img.setControlsVisibility({
+            mtr: false
           });
         }
 
         diagramsMakerCanvas.add(textBox);
-        diagramsMakerCanvas.renderAll();
 
         img.linkedText = textBox;
 
         img.on('moving', () => {
           if (img.linkedText) {
-            if (imageUrl.split('/').pop() === 'decision.png' || imageUrl.split('/').pop() === 'document.png' ||
-              imageUrl.split('/').pop() === 'input_output.png' || imageUrl.split('/').pop() === 'off_page_reference.png' ||
-              imageUrl.split('/').pop() === 'on_page_reference.png' || imageUrl.split('/').pop() === 'process.png' ||
-              imageUrl.split('/').pop() === 'start_end.png' || imageUrl.split('/').pop() === 'use_case.png') {
+            if (centeredImages.includes(imageName)) {
               img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
               img.linkedText.top = img.top + img.getScaledHeight() / 2 - textBox.height / 2;
-            } else if (imageUrl.split('/').pop() === 'actor.png') {
+            } else if (belowImages.includes(imageName)) {
               img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
               img.linkedText.top = img.top + img.getScaledHeight() + 10;
-            } else if (imageUrl.split('/').pop() === 'system.png') {
+            } else if (aboveImages.includes(imageName)) {
               img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
-              img.linkedText.top = img.top + img.getScaledHeight() - 90;
+              img.linkedText.top = img.top - textBox.height + 10;
             }
 
-            img.linkedText.bringToFront(); // Bring text above the image
+            img.linkedText.bringToFront();
             diagramsMakerCanvas.renderAll();
           }
         });
@@ -121,6 +161,12 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
 
+        diagramsMakerCanvas.on('after:render', () => {
+          if (img.linkedText) {
+            img.linkedText.bringToFront();
+          }
+        });
+
         diagramsMakerCanvas.on('selection:cleared', () => {
           diagramsMakerCanvas.getObjects('image').forEach((img) => {
             if (img.linkedText) {
@@ -129,6 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           diagramsMakerCanvas.renderAll();
         });
+
+        diagramsMakerCanvas.renderAll();
       }
     });
   });
@@ -254,13 +302,12 @@ document.addEventListener('DOMContentLoaded', () => {
       *Hacer funcionar bien el copiar y pegar.
       *En el div en blanco, ahí se debe de poder editar el texto.
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
+      *Pasar elemento hacia en frente o hacia atrás.
+      *Texto de elemento de diagrama, siempre en frente del elemento de diagrama, nunca lo debe tapar.
 
       *Cuando ajustas el tamaño de el elemento del diagrama, el texto también debe cambiar de tamaño y ajustarse en la posición que debe.
       *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
-      *Algunos elementos el texto se debe poner en otra posición, no centrado, como el actor, el sistema, etc.
-      *Texto de elemento de diagrama, siempre en frente del elemento de diagrama, nunca lo debe tapar.
       *En el giro, arreglar el posicionamiento (solo en las flechas que requieran de texto).
-      *Desactivar el giro en los elementos que no sean las flechas.
       *Al poner el cursor en una imagen, mostrar el nombre del elemento seleccionado
 
       *Ctrl + Z: Revertir cambios (WIP).

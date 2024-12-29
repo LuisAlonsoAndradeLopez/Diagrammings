@@ -91,6 +91,16 @@ body {
                     }
                 }
             }
+
+            #element-name {
+                position: absolute;
+                background-color: rgba(0, 0, 0, 0.7);
+                color: white;
+                padding: 5px;
+                font-size: 14px;
+                border-radius: 5px;
+                display: none;
+            }
         }
 
         #diagrams-maker-canvas {
