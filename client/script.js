@@ -15,26 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedCanvasObjects = null;
   let copiedCanvasObjects = [];
 
-  
-  //Corregir, es para que si el cursor está en una imagen, mostrar su nombre
-  //const elementNameDisplay = document.createElement('div');
-  //elementNameDisplay.id = 'element-name';
-  //document.body.appendChild(elementNameDisplay);
-//
-  //diagramElements.forEach((img) => {
-  //  img.addEventListener('mouseover', (event) => {
-  //    const name = event.target.title;
-  //    elementNameDisplay.textContent = name;
-  //    elementNameDisplay.style.left = `${event.pageX + 10}px`;
-  //    elementNameDisplay.style.top = `${event.pageY + 10}px`;
-  //    elementNameDisplay.style.display = 'block';
-  //  });
-//
-  //  img.addEventListener('mouseout', () => {
-  //    elementNameDisplay.style.display = 'none';
-  //  });
-  //});
-
   diagramElements.forEach((element) => {
     element.addEventListener('dragstart', (event) => {
       event.dataTransfer.setData('text/plain', event.target.src);
@@ -65,24 +45,81 @@ document.addEventListener('DOMContentLoaded', () => {
         left: pointer.x,
         top: pointer.y,
         selectable: true,
+        fill: 'black'
       });
 
       diagramsMakerCanvas.add(img);
       diagramsMakerCanvas.renderAll();
 
+      const imageName = imageUrl.split('/').pop();
+
       const centeredImages = [
-        'decision.png', 'document.png', 'input_output.png',
-        'off_page_reference.png', 'on_page_reference.png',
+        'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
         'process.png', 'start_end.png', 'use_case.png'
       ];
+
       const belowImages = ['actor.png'];
       const aboveImages = ['system.png'];
 
       const notRotatingImages = [
-        'actor.png', 'decision.png', 'document.png', 'input_output.png',
-        'off_page_reference.png', 'on_page_reference.png',
+        'actor.png', 'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
         'process.png', 'start_end.png', 'system.png', 'use_case.png'
       ];
+
+      const notScalingImages = [
+        'actor.png', 'off_page_reference.png', 'on_page_reference.png'
+      ];
+
+      const notScalingXAndYImages = [
+        'decision.png', 'document.png', 'input_output.png', 'process.png', 'start_end.png', 'use_case.png'
+      ];
+
+      const notScalingYAndFlipImages = [
+        'asociation.png', 'dependency.png', 'generalization.png', 'flow.png'
+      ];
+
+      if (notRotatingImages.includes(imageName)) {
+        img.set({
+          hasRotatingPoint: false,
+          lockRotation: true
+        });
+
+        img.setControlsVisibility({
+          mtr: false
+        });
+      }
+
+      if (notScalingImages.includes(imageName)) {
+        img.set({
+          hasControls: false
+        });
+      }
+
+      if (notScalingXAndYImages.includes(imageName)) {
+        img.setControlsVisibility({
+          mt: false,
+          mb: false,
+          ml: false,
+          mr: false,
+          bl: true,
+          br: true,
+          tl: true,
+          tr: true
+        });
+      }
+
+      if (notScalingYAndFlipImages.includes(imageName)) {
+        img.setControlsVisibility({
+          mt: false,
+          mb: false,
+          ml: true,
+          mr: true,
+          bl: false,
+          br: false,
+          tl: false,
+          tr: false
+        });
+      }
 
       if (imageUrl.split('/').pop() !== 'asociation.png' && imageUrl.split('/').pop() !== 'dependency.png' &&
         imageUrl.split('/').pop() !== 'generalization.png' && imageUrl.split('/').pop() !== 'flow.png') {
@@ -102,8 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
           padding: 5
         });
 
-        const imageName = imageUrl.split('/').pop();
-
         if (centeredImages.includes(imageName)) {
           textBox.set({
             left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
@@ -121,42 +156,33 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
 
-        if (notRotatingImages.includes(imageName)) {
-          img.set({
-            hasRotatingPoint: false,
-            lockRotation: true
-          });
-
-          img.setControlsVisibility({
-            mtr: false
-          });
-        }
-
         diagramsMakerCanvas.add(textBox);
 
         img.linkedText = textBox;
 
-        img.on('moving', () => {
-          if (img.linkedText) {
-            if (centeredImages.includes(imageName)) {
-              img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
-              img.linkedText.top = img.top + img.getScaledHeight() / 2 - textBox.height / 2;
-            } else if (belowImages.includes(imageName)) {
-              img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
-              img.linkedText.top = img.top + img.getScaledHeight() + 10;
-            } else if (aboveImages.includes(imageName)) {
-              img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
-              img.linkedText.top = img.top - textBox.height + 10;
-            }
+        ['moving', 'scaling', 'rotating'].forEach((event) => {
+          img.on(event, () => {
+            if (img.linkedText) {
+              if (centeredImages.includes(imageName)) {
+                img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
+                img.linkedText.top = img.top + img.getScaledHeight() / 2 - textBox.height / 2;
+              } else if (belowImages.includes(imageName)) {
+                img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
+                img.linkedText.top = img.top + img.getScaledHeight() + 10;
+              } else if (aboveImages.includes(imageName)) {
+                img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
+                img.linkedText.top = img.top - textBox.height + 10;
+              }
 
-            img.linkedText.bringToFront();
-            diagramsMakerCanvas.renderAll();
-          }
+              img.linkedText.bringToFront();
+              diagramsMakerCanvas.renderAll();
+            }
+          });
         });
 
         img.on('selected', () => {
           if (img.linkedText) {
-            img.linkedText.bringToFront(); // Bring text above the image
+            img.linkedText.bringToFront();
             diagramsMakerCanvas.renderAll();
           }
         });
@@ -170,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
         diagramsMakerCanvas.on('selection:cleared', () => {
           diagramsMakerCanvas.getObjects('image').forEach((img) => {
             if (img.linkedText) {
-              img.linkedText.evented = false; // Maintain non-interactability
+              img.linkedText.evented = false;
             }
           });
           diagramsMakerCanvas.renderAll();
@@ -299,16 +325,14 @@ document.addEventListener('DOMContentLoaded', () => {
       *Exportación tiene que capturar todos los elementos incluso los que no se ven en el canvasContainer. (Pulir)
       *Control Z y Control Y
       *Control X
-      *Hacer funcionar bien el copiar y pegar.
-      *En el div en blanco, ahí se debe de poder editar el texto.
+      *Control C y Control V.
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
+      *En el div en blanco, ahí se debe de poder editar el texto.
       *Pasar elemento hacia en frente o hacia atrás.
+      *Agregar el include o extend a la flecha de include/extend
       *Texto de elemento de diagrama, siempre en frente del elemento de diagrama, nunca lo debe tapar.
 
-      *Cuando ajustas el tamaño de el elemento del diagrama, el texto también debe cambiar de tamaño y ajustarse en la posición que debe.
       *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
-      *En el giro, arreglar el posicionamiento (solo en las flechas que requieran de texto).
-      *Al poner el cursor en una imagen, mostrar el nombre del elemento seleccionado
 
       *Ctrl + Z: Revertir cambios (WIP).
       *Ctrl + Y: Recuperar elementos de la reversión de cambios (WIP).
