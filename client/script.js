@@ -1,19 +1,47 @@
 document.addEventListener('DOMContentLoaded', () => {
   const helpButton = document.getElementById('help-button');
   const exportButton = document.getElementById('export-button');
-
   const canvasContainer = document.getElementById('diagramming-content');
   const diagramsMakerCanvasHtmlElement = document.getElementById('diagrams-maker-canvas');
-  const diagramsMakerCanvas = new fabric.Canvas(diagramsMakerCanvasHtmlElement);
+  const selectedImageDiv = document.getElementById('selected-image-div');
+  const nonSelectedImageDiv = document.getElementById('non-selected-image-div');
+
   const diagramElements = document.querySelectorAll('.diagram-element');
+
+  const diagramsMakerCanvas = new fabric.Canvas(diagramsMakerCanvasHtmlElement);
 
   let canvasHistory = [];
   let canvasZoomLevel = 1;
   let canvasIsPanning = false;
   let canvasLastPanPosition = { x: 0, y: 0 };
 
-  let selectedCanvasObjects = null;
-  let copiedCanvasObjects = [];
+  let selectedCanvasObjects = [];
+  let copiedOrCutCanvasObjects = [];
+
+  const centeredImages = [
+    'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
+    'process.png', 'start_end.png', 'use_case.png'
+  ];
+
+  const belowImages = ['actor.png'];
+  const aboveImages = ['system.png'];
+
+  const notRotatingImages = [
+    'actor.png', 'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
+    'process.png', 'start_end.png', 'system.png', 'use_case.png'
+  ];
+
+  const notScalingImages = [
+    'actor.png', 'off_page_reference.png', 'on_page_reference.png'
+  ];
+
+  const notScalingXAndYImages = [
+    'decision.png', 'document.png', 'input_output.png', 'process.png', 'start_end.png', 'use_case.png'
+  ];
+
+  const notScalingYAndFlipImages = [
+    'asociation.png', 'dependency.png', 'generalization.png', 'flow.png'
+  ];
 
   diagramElements.forEach((element) => {
     element.addEventListener('dragstart', (event) => {
@@ -42,43 +70,17 @@ document.addEventListener('DOMContentLoaded', () => {
       img.scaleToHeight(75);
 
       img.set({
-        left: pointer.x,
-        top: pointer.y,
+        left: pointer.x - img.getScaledWidth() / 2,
+        top: pointer.y - img.getScaledHeight() / 2,
         selectable: true,
-        fill: 'black'
+        fill: 'black',
+        imageUrl: imageUrl.split('/').pop()
       });
 
       diagramsMakerCanvas.add(img);
       diagramsMakerCanvas.renderAll();
 
-      const imageName = imageUrl.split('/').pop();
-
-      const centeredImages = [
-        'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
-        'process.png', 'start_end.png', 'use_case.png'
-      ];
-
-      const belowImages = ['actor.png'];
-      const aboveImages = ['system.png'];
-
-      const notRotatingImages = [
-        'actor.png', 'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
-        'process.png', 'start_end.png', 'system.png', 'use_case.png'
-      ];
-
-      const notScalingImages = [
-        'actor.png', 'off_page_reference.png', 'on_page_reference.png'
-      ];
-
-      const notScalingXAndYImages = [
-        'decision.png', 'document.png', 'input_output.png', 'process.png', 'start_end.png', 'use_case.png'
-      ];
-
-      const notScalingYAndFlipImages = [
-        'asociation.png', 'dependency.png', 'generalization.png', 'flow.png'
-      ];
-
-      if (notRotatingImages.includes(imageName)) {
+      if (notRotatingImages.includes(img.imageUrl)) {
         img.set({
           hasRotatingPoint: false,
           lockRotation: true
@@ -89,13 +91,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
-      if (notScalingImages.includes(imageName)) {
+      if (notScalingImages.includes(img.imageUrl)) {
         img.set({
           hasControls: false
         });
       }
 
-      if (notScalingXAndYImages.includes(imageName)) {
+      if (notScalingXAndYImages.includes(img.imageUrl)) {
         img.setControlsVisibility({
           mt: false,
           mb: false,
@@ -108,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
-      if (notScalingYAndFlipImages.includes(imageName)) {
+      if (notScalingYAndFlipImages.includes(img.imageUrl)) {
         img.setControlsVisibility({
           mt: false,
           mb: false,
@@ -121,8 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
-      if (imageUrl.split('/').pop() !== 'asociation.png' && imageUrl.split('/').pop() !== 'dependency.png' &&
-        imageUrl.split('/').pop() !== 'generalization.png' && imageUrl.split('/').pop() !== 'flow.png') {
+      if (img.imageUrl !== 'asociation.png' && img.imageUrl !== 'dependency.png' &&
+        img.imageUrl !== 'generalization.png' && img.imageUrl !== 'flow.png') {
         const textBox = new fabric.Textbox('Texto', {
           fontSize: 16,
           fontFamily: 'Arial',
@@ -131,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
           textAlign: 'center',
           borderColor: 'gray',
           cornerColor: 'blue',
+          visible: true,
           editable: false,
           evented: false,
           hasControls: false,
@@ -139,17 +142,17 @@ document.addEventListener('DOMContentLoaded', () => {
           padding: 5
         });
 
-        if (centeredImages.includes(imageName)) {
+        if (centeredImages.includes(img.imageUrl)) {
           textBox.set({
             left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
             top: img.top + img.getScaledHeight() / 2 - textBox.height / 2
           });
-        } else if (belowImages.includes(imageName)) {
+        } else if (belowImages.includes(img.imageUrl)) {
           textBox.set({
             left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
             top: img.top + img.getScaledHeight() + 10
           });
-        } else if (aboveImages.includes(imageName)) {
+        } else if (aboveImages.includes(img.imageUrl)) {
           textBox.set({
             left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
             top: img.top - textBox.height + 10
@@ -160,50 +163,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
         img.linkedText = textBox;
 
-        ['moving', 'scaling', 'rotating'].forEach((event) => {
+        ['scaling', 'rotating'].forEach((event) => {
           img.on(event, () => {
             if (img.linkedText) {
-              if (centeredImages.includes(imageName)) {
+              if (centeredImages.includes(img.imageUrl)) {
                 img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
                 img.linkedText.top = img.top + img.getScaledHeight() / 2 - textBox.height / 2;
-              } else if (belowImages.includes(imageName)) {
+              } else if (belowImages.includes(img.imageUrl)) {
                 img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
                 img.linkedText.top = img.top + img.getScaledHeight() + 10;
-              } else if (aboveImages.includes(imageName)) {
+              } else if (aboveImages.includes(img.imageUrl)) {
                 img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
                 img.linkedText.top = img.top - textBox.height + 10;
               }
-
-              img.linkedText.bringToFront();
-              diagramsMakerCanvas.renderAll();
             }
           });
-        });
-
-        img.on('selected', () => {
-          if (img.linkedText) {
-            img.linkedText.bringToFront();
-            diagramsMakerCanvas.renderAll();
-          }
-        });
-
-        diagramsMakerCanvas.on('after:render', () => {
-          if (img.linkedText) {
-            img.linkedText.bringToFront();
-          }
-        });
-
-        diagramsMakerCanvas.on('selection:cleared', () => {
-          diagramsMakerCanvas.getObjects('image').forEach((img) => {
-            if (img.linkedText) {
-              img.linkedText.evented = false;
-            }
-          });
-          diagramsMakerCanvas.renderAll();
         });
 
         diagramsMakerCanvas.renderAll();
       }
+
+      img.on('selected', () => {
+        nonSelectedImageDiv.style.display = 'none';
+        selectedImageDiv.style.display = 'block';
+      });
+
+      diagramsMakerCanvas.on('selection:cleared', () => {
+        diagramsMakerCanvas.getObjects('image').forEach((img) => {
+          if (img.linkedText) {
+            img.linkedText.evented = false;
+          }
+        });
+
+        nonSelectedImageDiv.style.display = 'block';
+        selectedImageDiv.style.display = 'none';
+
+        diagramsMakerCanvas.renderAll();
+      });
     });
   });
 
@@ -246,6 +242,23 @@ document.addEventListener('DOMContentLoaded', () => {
   diagramsMakerCanvas.on('object:added', saveCanvasState);
   diagramsMakerCanvas.on('object:removed', saveCanvasState);
 
+  diagramsMakerCanvas.on('object:moving', (event) => {
+    const movingObject = event.target;
+    if (movingObject && movingObject.linkedText) {
+      if (centeredImages.includes(movingObject.imageUrl)) {
+        movingObject.linkedText.left = movingObject.left + movingObject.getScaledWidth() / 2 - movingObject.linkedText.width / 2;
+        movingObject.linkedText.top = movingObject.top + movingObject.getScaledHeight() / 2 - movingObject.linkedText.height / 2;
+      } else if (belowImages.includes(movingObject.imageUrl)) {
+        movingObject.linkedText.left = movingObject.left + movingObject.getScaledWidth() / 2 - movingObject.linkedText.width / 2;
+        movingObject.linkedText.top = movingObject.top + movingObject.getScaledHeight() + 10;
+      } else if (aboveImages.includes(movingObject.imageUrl)) {
+        movingObject.linkedText.left = movingObject.left + movingObject.getScaledWidth() / 2 - movingObject.linkedText.width / 2;
+        movingObject.linkedText.top = movingObject.top - movingObject.linkedText.height + 10;
+      }
+      movingObject.linkedText.bringToFront();
+    }
+    diagramsMakerCanvas.renderAll();
+  });
 
   document.addEventListener('keydown', (event) => {
     selectedCanvasObjects = diagramsMakerCanvas.getActiveObjects();
@@ -268,31 +281,47 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    if (event.ctrlKey && event.key === 'c' && selectedCanvasObjects) {
-      copiedCanvasObjects = [];
+    if (event.ctrlKey && event.key === 'c' && selectedCanvasObjects.length > 0) {
+      copiedOrCutCanvasObjects = [];
 
       selectedCanvasObjects.forEach((obj) => {
         obj.clone((clonedObj) => {
-          copiedCanvasObjects.push(clonedObj);
+          copiedOrCutCanvasObjects.push(clonedObj);
         });
       });
+
+      console.log("Copied objects:", copiedOrCutCanvasObjects);
     }
 
-    if (event.ctrlKey && event.key === 'v' && copiedCanvasObjects) {
-      copiedCanvasObjects.forEach((copiedObj) => {
-        copiedObj.clone((clonedObj) => {
-          clonedObj.set({
-            left: copiedObj.left,
-            top: copiedObj.top,
+    if (event.ctrlKey && event.key === 'x' && selectedCanvasObjects.length > 0) {
+      copiedOrCutCanvasObjects = [];
+
+      selectedCanvasObjects.forEach((obj) => {
+        obj.clone((clonedObj) => {
+          copiedOrCutCanvasObjects.push(clonedObj);
+        });
+        diagramsMakerCanvas.remove(obj);
+      });
+
+      selectedCanvasObjects = []; // Clear selection after cutting
+      console.log("Cut objects:", copiedOrCutCanvasObjects);
+    }
+
+    if (event.ctrlKey && event.key === 'v' && copiedOrCutCanvasObjects.length > 0) {
+      copiedOrCutCanvasObjects.forEach((copiedObj) => {
+        copiedObj.clone((pastedObj) => {
+          pastedObj.set({
+            left: pastedObj.left + 20, // Offset to avoid overlap
+            top: pastedObj.top + 20,
+            selectable: true,
           });
-
-          diagramsMakerCanvas.add(clonedObj);
-          diagramsMakerCanvas.setActiveObject(clonedObj);
+          diagramsMakerCanvas.add(pastedObj);
+          diagramsMakerCanvas.setActiveObject(pastedObj);
           diagramsMakerCanvas.renderAll();
-
-          copiedCanvasObjects.push(clonedObj);
         });
       });
+
+      console.log("Pasted objects:", copiedOrCutCanvasObjects);
     }
 
     if (event.key === 'Backspace' && selectedCanvasObjects) {
@@ -330,7 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
       *En el div en blanco, ahí se debe de poder editar el texto.
       *Pasar elemento hacia en frente o hacia atrás.
       *Agregar el include o extend a la flecha de include/extend
-      *Texto de elemento de diagrama, siempre en frente del elemento de diagrama, nunca lo debe tapar.
 
       *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
 
