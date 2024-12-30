@@ -1,3 +1,7 @@
+hr {
+  display: none;
+}
+
 body {
   background-color: #E7E7E7;
   font-family: sans-serif;
@@ -7,6 +11,7 @@ body header {
   align-items: center;
   justify-content: center;
   margin: 10px;
+  border-radius: 20px;
   background-color: #FFFFFF;
 }
 body header #help-button {
@@ -20,8 +25,8 @@ body header #help-button {
   cursor: pointer;
   transition: transform 0.2s ease, background-color 0.2s ease;
 }
-body header #help-button :hover {
-  background-color: rgb(58, 77, 253);
+body header #help-button:hover {
+  background-color: rgb(180, 42, 72);
   transform: scale(1.05);
 }
 body header #diagrammings-title {
@@ -40,7 +45,7 @@ body header #export-button {
   cursor: pointer;
   transition: transform 0.2s ease, background-color 0.2s ease;
 }
-body header #export-button :hover {
+body header #export-button:hover {
   background-color: rgb(58, 77, 253);
   transform: scale(1.05);
 }
@@ -88,10 +93,102 @@ body #diagramming-content #diagrams-maker-canvas {
   background-color: #FFFFFF;
 }
 body #diagramming-content #diagrams-elements-editor-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: 25%;
   height: 520px;
   border-radius: 10px;
   background-color: #FFFFFF;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div {
+  display: none;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-text-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -10px;
+  gap: 5px;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div button {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #CCCCCC;
+  border-radius: 3px;
+  background-color: #FFFFFF;
+  cursor: pointer;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div button:hover {
+  background-color: #EEEEEE;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div #left-text-align-button {
+  background-image: url("assets/images/text_alignment_buttons_icons/start_alignment.png");
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div #center-text-align-button {
+  background-image: url("assets/images/text_alignment_buttons_icons/center_alignment.png");
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div #right-text-align-button {
+  background-image: url("assets/images/text_alignment_buttons_icons/end_alignment.png");
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div #justify-text-align-button {
+  background-image: url("assets/images/text_alignment_buttons_icons/justified_alignment.png");
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div #text-font-size-input {
+  padding: 0.25rem;
+  width: 44%;
+  border: 1px solid #CCCCCC;
+  border-radius: 3px;
+  font-size: 1rem;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #include-extends-inputs-div {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  font-size: 1rem;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #include-extends-inputs-div #extends-input {
+  margin-left: 1rem;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #positioning-text-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 10px;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #positioning-text-div #positioning-h2 {
+  color: #000000;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #image-position-modifier-div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -10px;
+  gap: 0.5rem;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #image-position-modifier-div button {
+  padding: 0.5rem;
+  border: 1px solid #CCCCCC;
+  border-radius: 3px;
+  background-color: #FFFFFF;
+  font-size: 14px;
+  cursor: pointer;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #image-position-modifier-div button:hover {
+  background-color: #EEEEEE;
+}
+body #diagramming-content #diagrams-elements-editor-div #non-selected-image-div {
+  display: flex;
+  text-align: center;
+  font-size: 40px;
 }
 @media (max-width: 768px) {
   body {

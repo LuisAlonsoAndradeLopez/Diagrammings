@@ -1,3 +1,7 @@
+hr {
+    display: none;
+}
+
 body {
     background-color: #E7E7E7;
     font-family: sans-serif;
@@ -7,6 +11,7 @@ body {
         align-items: center;
         justify-content: center;
         margin: 10px;
+        border-radius: 20px;
         background-color: #FFFFFF;
 
         #help-button {
@@ -20,8 +25,8 @@ body {
             cursor: pointer;
             transition: transform 0.2s ease, background-color 0.2s ease;
 
-            :hover {
-                background-color: rgb(58, 77, 253);
+            &:hover {
+                background-color: rgb(180, 42, 72);
                 transform: scale(1.05);
             }
         }
@@ -43,7 +48,7 @@ body {
             cursor: pointer;
             transition: transform 0.2s ease, background-color 0.2s ease;
 
-            :hover {
+            &:hover {
                 background-color: rgb(58, 77, 253);
                 transform: scale(1.05);
             }
@@ -100,10 +105,120 @@ body {
         }
 
         #diagrams-elements-editor-div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             width: 25%;
             height: 520px;
             border-radius: 10px;
             background-color: #FFFFFF;
+
+            #selected-image-div {
+                display: none;
+
+                #text-text-div {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+                #text-modifiers-div {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-top: -10px;
+                    gap: 5px;
+
+                    button {
+                        width: 2rem;
+                        height: 2rem;
+                        border: 1px solid #CCCCCC;
+                        border-radius: 3px;
+                        background-color: #FFFFFF;
+                        cursor: pointer;
+
+                        &:hover {
+                            background-color: #EEEEEE;
+                        }
+                    }
+
+                    #left-text-align-button {
+                        background-image: url('assets/images/text_alignment_buttons_icons/start_alignment.png');
+                    }
+
+                    #center-text-align-button {
+                        background-image: url('assets/images/text_alignment_buttons_icons/center_alignment.png');
+                    }
+
+                    #right-text-align-button {
+                        background-image: url('assets/images/text_alignment_buttons_icons/end_alignment.png');
+                    }
+
+                    #justify-text-align-button {
+                        background-image: url('assets/images/text_alignment_buttons_icons/justified_alignment.png');
+                    }
+
+                    #text-font-size-input {
+                        padding: 0.25rem;
+                        width: 44%;
+                        border: 1px solid #CCCCCC;
+                        border-radius: 3px;
+                        font-size: 1rem;
+                    }
+                }
+
+                #include-extends-inputs-div {
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    margin-top: 10px;
+                    font-size: 1rem;
+
+                    #extends-input {
+                        margin-left: 1rem;
+                    }
+                }
+
+                #positioning-text-div {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 0.5rem;
+                    margin-top: 10px;
+
+                    #positioning-h2 {
+                        color: #000000;
+                    }
+                }
+
+                #image-position-modifier-div {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-top: -10px;
+                    gap: 0.5rem;
+
+                    button {
+                        padding: 0.5rem;
+                        border: 1px solid #CCCCCC;
+                        border-radius: 3px;
+                        background-color: #FFFFFF;
+                        font-size: 14px;
+                        cursor: pointer;
+
+                        &:hover {
+                            background-color: #EEEEEE;
+                        }
+                    }
+                }
+            }
+
+            #non-selected-image-div {
+                display: flex;
+                text-align: center;
+                font-size: 40px;
+            }
         }
     }
 
