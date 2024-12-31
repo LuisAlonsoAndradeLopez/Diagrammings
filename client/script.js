@@ -66,140 +66,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const pointer = diagramsMakerCanvas.getPointer(event);
 
     fabric.Image.fromURL(imageUrl, (img) => {
-      img.scaleToWidth(100);
-      img.scaleToHeight(75);
-
       img.set({
-        left: pointer.x - img.getScaledWidth() / 2,
-        top: pointer.y - img.getScaledHeight() / 2,
-        selectable: true,
-        fill: 'black',
         imageUrl: imageUrl.split('/').pop()
       });
 
-      diagramsMakerCanvas.add(img);
-      diagramsMakerCanvas.renderAll();
+      setCanvasDiagramElementAttributes(img, pointer);
 
-      if (notRotatingImages.includes(img.imageUrl)) {
-        img.set({
-          hasRotatingPoint: false,
-          lockRotation: true
-        });
-
-        img.setControlsVisibility({
-          mtr: false
-        });
-      }
-
-      if (notScalingImages.includes(img.imageUrl)) {
-        img.set({
-          hasControls: false
-        });
-      }
-
-      if (notScalingXAndYImages.includes(img.imageUrl)) {
-        img.setControlsVisibility({
-          mt: false,
-          mb: false,
-          ml: false,
-          mr: false,
-          bl: true,
-          br: true,
-          tl: true,
-          tr: true
-        });
-      }
-
-      if (notScalingYAndFlipImages.includes(img.imageUrl)) {
-        img.setControlsVisibility({
-          mt: false,
-          mb: false,
-          ml: true,
-          mr: true,
-          bl: false,
-          br: false,
-          tl: false,
-          tr: false
-        });
-      }
-
-      if (img.imageUrl !== 'asociation.png' && img.imageUrl !== 'dependency.png' &&
-        img.imageUrl !== 'generalization.png' && img.imageUrl !== 'flow.png') {
-        const textBox = new fabric.Textbox('Texto', {
-          fontSize: 16,
-          fontFamily: 'Arial',
-          fontStyle: 'normal',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          borderColor: 'gray',
-          cornerColor: 'blue',
-          visible: true,
-          editable: false,
-          evented: false,
-          hasControls: false,
-          hasBorders: false,
-          selectable: false,
-          padding: 5
-        });
-
-        if (centeredImages.includes(img.imageUrl)) {
-          textBox.set({
-            left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
-            top: img.top + img.getScaledHeight() / 2 - textBox.height / 2
-          });
-        } else if (belowImages.includes(img.imageUrl)) {
-          textBox.set({
-            left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
-            top: img.top + img.getScaledHeight() + 10
-          });
-        } else if (aboveImages.includes(img.imageUrl)) {
-          textBox.set({
-            left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
-            top: img.top - textBox.height + 10
-          });
-        }
-
-        diagramsMakerCanvas.add(textBox);
-
+      if (!notScalingYAndFlipImages.includes(img.imageUrl)) {
+        const textBox = new fabric.Textbox('Texto');
+        setCanvasDiagramElementTextBoxAttributes(textBox);
         img.linkedText = textBox;
-
-        ['scaling', 'rotating'].forEach((event) => {
-          img.on(event, () => {
-            if (img.linkedText) {
-              if (centeredImages.includes(img.imageUrl)) {
-                img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
-                img.linkedText.top = img.top + img.getScaledHeight() / 2 - textBox.height / 2;
-              } else if (belowImages.includes(img.imageUrl)) {
-                img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
-                img.linkedText.top = img.top + img.getScaledHeight() + 10;
-              } else if (aboveImages.includes(img.imageUrl)) {
-                img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
-                img.linkedText.top = img.top - textBox.height + 10;
-              }
-            }
-          });
-        });
-
-        diagramsMakerCanvas.renderAll();
+        setCombinedCanvasDiagramElementAndTextBoxAttributes(img, textBox);
+        diagramsMakerCanvas.add(textBox);
+        img.linkedText.bringToFront();
       }
 
-      img.on('selected', () => {
-        nonSelectedImageDiv.style.display = 'none';
-        selectedImageDiv.style.display = 'block';
-      });
-
-      diagramsMakerCanvas.on('selection:cleared', () => {
-        diagramsMakerCanvas.getObjects('image').forEach((img) => {
-          if (img.linkedText) {
-            img.linkedText.evented = false;
-          }
-        });
-
-        nonSelectedImageDiv.style.display = 'block';
-        selectedImageDiv.style.display = 'none';
-
-        diagramsMakerCanvas.renderAll();
-      });
+      diagramsMakerCanvas.add(img);
+      diagramsMakerCanvas.setActiveObject(img);
+      diagramsMakerCanvas.renderAll();
     });
   });
 
@@ -260,8 +144,22 @@ document.addEventListener('DOMContentLoaded', () => {
     diagramsMakerCanvas.renderAll();
   });
 
+  diagramsMakerCanvas.on('selection:cleared', () => {
+    diagramsMakerCanvas.getObjects('image').forEach((img) => {
+      if (img.linkedText) {
+        img.linkedText.evented = false;
+      }
+    });
+
+    nonSelectedImageDiv.style.display = 'block';
+    selectedImageDiv.style.display = 'none';
+
+    diagramsMakerCanvas.renderAll();
+  });
+
   document.addEventListener('keydown', (event) => {
     selectedCanvasObjects = diagramsMakerCanvas.getActiveObjects();
+    const pointer = diagramsMakerCanvas.getPointer(event);
 
     if (event.ctrlKey && event.key === 'z') {
       event.preventDefault();
@@ -284,44 +182,83 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.ctrlKey && event.key === 'c' && selectedCanvasObjects.length > 0) {
       copiedOrCutCanvasObjects = [];
 
-      selectedCanvasObjects.forEach((obj) => {
-        obj.clone((clonedObj) => {
-          copiedOrCutCanvasObjects.push(clonedObj);
+      selectedCanvasObjects.forEach((img) => {
+        img.clone((clonedImg) => {
+          setCanvasDiagramElementAttributes(clonedImg, pointer);
+
+          if (img.linkedText) {
+            img.linkedText.clone((clonedTextBox) => {
+              setCanvasDiagramElementTextBoxAttributes(clonedTextBox);
+              clonedImg.linkedText = clonedTextBox;
+              setCombinedCanvasDiagramElementAndTextBoxAttributes(clonedImg, clonedTextBox);
+
+              copiedOrCutCanvasObjects.push({ object: clonedImg, objectImageUrl: img.imageUrl, text: clonedTextBox });
+            });
+          } else {
+            copiedOrCutCanvasObjects.push({ object: clonedImg, objectImageUrl: img.imageUrl });
+          }
         });
       });
-
-      console.log("Copied objects:", copiedOrCutCanvasObjects);
     }
 
     if (event.ctrlKey && event.key === 'x' && selectedCanvasObjects.length > 0) {
       copiedOrCutCanvasObjects = [];
 
-      selectedCanvasObjects.forEach((obj) => {
-        obj.clone((clonedObj) => {
-          copiedOrCutCanvasObjects.push(clonedObj);
-        });
-        diagramsMakerCanvas.remove(obj);
-      });
+      selectedCanvasObjects.forEach((img) => {
+        img.clone((clonedImg) => {
+          setCanvasDiagramElementAttributes(clonedImg, pointer);
 
-      selectedCanvasObjects = []; // Clear selection after cutting
-      console.log("Cut objects:", copiedOrCutCanvasObjects);
+          if (img.linkedText) {
+            img.linkedText.clone((clonedTextBox) => {
+              setCanvasDiagramElementTextBoxAttributes(clonedTextBox);
+              clonedImg.linkedText = clonedTextBox;
+              setCombinedCanvasDiagramElementAndTextBoxAttributes(clonedImg, clonedTextBox);
+
+              copiedOrCutCanvasObjects.push({ object: clonedImg, objectImageUrl: img.imageUrl, text: clonedTextBox });
+              diagramsMakerCanvas.remove(img.linkedText);
+            });
+          } else {
+            copiedOrCutCanvasObjects.push({ object: clonedImg, objectImageUrl: img.imageUrl });
+          }
+
+          diagramsMakerCanvas.remove(img);
+          diagramsMakerCanvas.discardActiveObject();
+          selectedCanvasObjects = [];
+        });
+      });
     }
 
     if (event.ctrlKey && event.key === 'v' && copiedOrCutCanvasObjects.length > 0) {
       copiedOrCutCanvasObjects.forEach((copiedObj) => {
-        copiedObj.clone((pastedObj) => {
-          pastedObj.set({
-            left: pastedObj.left + 20, // Offset to avoid overlap
-            top: pastedObj.top + 20,
-            selectable: true,
+        const clonedObj = copiedObj.object;
+        const clonedObjImageUrl = copiedObj.objectImageUrl;
+        console.log("clonedObjImageUrl: " + clonedObjImageUrl);
+
+        clonedObj.clone((pastedImg) => {
+          pastedImg.set({
+            imageUrl: clonedObjImageUrl
           });
-          diagramsMakerCanvas.add(pastedObj);
-          diagramsMakerCanvas.setActiveObject(pastedObj);
+          console.log("pastedImg.imageUrl: " + pastedImg.imageUrl);
+
+          setCanvasDiagramElementAttributes(pastedImg, pointer);
+
+          if (copiedObj.text) {
+            copiedObj.text.clone((pastedTextBox) => {
+              setCanvasDiagramElementTextBoxAttributes(pastedTextBox);
+              pastedImg.linkedText = pastedTextBox;
+              setCombinedCanvasDiagramElementAndTextBoxAttributes(pastedImg, pastedTextBox);
+              diagramsMakerCanvas.add(pastedTextBox);
+
+            });
+          }
+
+          diagramsMakerCanvas.add(pastedImg);
+          diagramsMakerCanvas.setActiveObject(pastedImg);
           diagramsMakerCanvas.renderAll();
         });
-      });
 
-      console.log("Pasted objects:", copiedOrCutCanvasObjects);
+        console.log("Pasted objects:", copiedOrCutCanvasObjects);
+      });
     }
 
     if (event.key === 'Backspace' && selectedCanvasObjects) {
@@ -427,6 +364,119 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('No se puede exportar un diagrama vacío.');
     }
   });
+
+  function setCanvasDiagramElementAttributes(img, pointer) {
+    img.scaleToWidth(100);
+    img.scaleToHeight(75);
+
+    img.set({
+      left: pointer.x - img.getScaledWidth() / 2,
+      top: pointer.y - img.getScaledHeight() / 2,
+      selectable: true,
+      fill: 'black'
+    });
+
+    if (notRotatingImages.includes(img.imageUrl)) {
+      img.set({
+        hasRotatingPoint: false,
+        lockRotation: true
+      });
+
+      img.setControlsVisibility({
+        mtr: false
+      });
+    }
+
+    if (notScalingImages.includes(img.imageUrl)) {
+      img.set({ hasControls: false });
+    }
+
+    if (notScalingXAndYImages.includes(img.imageUrl)) {
+      img.setControlsVisibility({
+        mt: false,
+        mb: false,
+        ml: false,
+        mr: false,
+        bl: true,
+        br: true,
+        tl: true,
+        tr: true
+      });
+    }
+
+    if (notScalingYAndFlipImages.includes(img.imageUrl)) {
+      img.setControlsVisibility({
+        mt: false,
+        mb: false,
+        ml: true,
+        mr: true,
+        bl: false,
+        br: false,
+        tl: false,
+        tr: false
+      });
+    }
+
+    img.on('selected', () => {
+      nonSelectedImageDiv.style.display = 'none';
+      selectedImageDiv.style.display = 'block';
+    });
+  }
+
+  function setCanvasDiagramElementTextBoxAttributes(textBox) {
+    textBox.set({
+      fontSize: 16,
+      fontFamily: 'Arial',
+      fontStyle: 'normal',
+      fontWeight: 'bold',
+      textAlign: 'center',
+      borderColor: 'gray',
+      cornerColor: 'blue',
+      visible: true,
+      editable: false,
+      evented: false,
+      hasControls: false,
+      hasBorders: false,
+      selectable: false,
+      padding: 5
+    });
+  }
+
+  function setCombinedCanvasDiagramElementAndTextBoxAttributes(img, textBox) {
+    if (centeredImages.includes(img.imageUrl)) {
+      textBox.set({
+        left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
+        top: img.top + img.getScaledHeight() / 2 - textBox.height / 2
+      });
+    } else if (belowImages.includes(img.imageUrl)) {
+      textBox.set({
+        left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
+        top: img.top + img.getScaledHeight() + 10
+      });
+    } else if (aboveImages.includes(img.imageUrl)) {
+      textBox.set({
+        left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
+        top: img.top - textBox.height + 10
+      });
+    }
+
+    ['scaling', 'rotating'].forEach((event) => {
+      img.on(event, () => {
+        if (img.linkedText) {
+          if (centeredImages.includes(img.imageUrl)) {
+            img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
+            img.linkedText.top = img.top + img.getScaledHeight() / 2 - textBox.height / 2;
+          } else if (belowImages.includes(img.imageUrl)) {
+            img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
+            img.linkedText.top = img.top + img.getScaledHeight() + 10;
+          } else if (aboveImages.includes(img.imageUrl)) {
+            img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
+            img.linkedText.top = img.top - textBox.height + 10;
+          }
+        }
+      });
+    });
+  }
 
   function saveCanvasState() {
     console.log(canvasHistory);
