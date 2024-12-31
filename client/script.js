@@ -43,6 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
     'asociation.png', 'dependency.png', 'generalization.png', 'flow.png'
   ];
 
+  let mousePointer = null;
+
   diagramElements.forEach((element) => {
     element.addEventListener('dragstart', (event) => {
       event.dataTransfer.setData('text/plain', event.target.src);
@@ -63,14 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const pointer = diagramsMakerCanvas.getPointer(event);
-
     fabric.Image.fromURL(imageUrl, (img) => {
       img.set({
         imageUrl: imageUrl.split('/').pop()
       });
 
-      setCanvasDiagramElementAttributes(img, pointer);
+      setCanvasDiagramElementAttributes(img);
 
       if (!notScalingYAndFlipImages.includes(img.imageUrl)) {
         const textBox = new fabric.Textbox('Texto');
@@ -90,9 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
   diagramsMakerCanvasHtmlElement.addEventListener('wheel', (event) => {
     event.preventDefault();
     const delta = event.deltaY > 0 ? 0.9 : 1.1;
-    const pointer = diagramsMakerCanvas.getPointer(event);
 
-    diagramsMakerCanvas.zoomToPoint(new fabric.Point(pointer.x, pointer.y), canvasZoomLevel * delta);
+    diagramsMakerCanvas.zoomToPoint(new fabric.Point(mousePointer.x, mousePointer.y), canvasZoomLevel * delta);
     canvasZoomLevel = diagramsMakerCanvas.getZoom();
   });
 
@@ -106,6 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   diagramsMakerCanvas.on('mouse:move', (event) => {
+    mousePointer = diagramsMakerCanvas.getPointer(event.e);
+
     if (canvasIsPanning) {
       const dx = event.e.clientX - canvasLastPanPosition.x;
       const dy = event.e.clientY - canvasLastPanPosition.y;
@@ -159,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('keydown', (event) => {
     selectedCanvasObjects = diagramsMakerCanvas.getActiveObjects();
-    const pointer = diagramsMakerCanvas.getPointer(event);
+    
 
     if (event.ctrlKey && event.key === 'z') {
       event.preventDefault();
@@ -184,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       selectedCanvasObjects.forEach((img) => {
         img.clone((clonedImg) => {
-          setCanvasDiagramElementAttributes(clonedImg, pointer);
+          setCanvasDiagramElementAttributes(clonedImg);
 
           if (img.linkedText) {
             img.linkedText.clone((clonedTextBox) => {
@@ -206,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       selectedCanvasObjects.forEach((img) => {
         img.clone((clonedImg) => {
-          setCanvasDiagramElementAttributes(clonedImg, pointer);
+          setCanvasDiagramElementAttributes(clonedImg);
 
           if (img.linkedText) {
             img.linkedText.clone((clonedTextBox) => {
@@ -232,15 +233,17 @@ document.addEventListener('DOMContentLoaded', () => {
       copiedOrCutCanvasObjects.forEach((copiedObj) => {
         const clonedObj = copiedObj.object;
         const clonedObjImageUrl = copiedObj.objectImageUrl;
-        console.log("clonedObjImageUrl: " + clonedObjImageUrl);
 
         clonedObj.clone((pastedImg) => {
           pastedImg.set({
             imageUrl: clonedObjImageUrl
           });
-          console.log("pastedImg.imageUrl: " + pastedImg.imageUrl);
 
-          setCanvasDiagramElementAttributes(pastedImg, pointer);
+          setCanvasDiagramElementAttributes(pastedImg);
+
+          console.log("Puta bojoto: ");
+          console.log(mousePointer);
+          console.log(pastedImg);
 
           if (copiedObj.text) {
             copiedObj.text.clone((pastedTextBox) => {
@@ -248,7 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
               pastedImg.linkedText = pastedTextBox;
               setCombinedCanvasDiagramElementAndTextBoxAttributes(pastedImg, pastedTextBox);
               diagramsMakerCanvas.add(pastedTextBox);
-
             });
           }
 
@@ -365,13 +367,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  function setCanvasDiagramElementAttributes(img, pointer) {
+  function setCanvasDiagramElementAttributes(img) {
     img.scaleToWidth(100);
     img.scaleToHeight(75);
 
     img.set({
-      left: pointer.x - img.getScaledWidth() / 2,
-      top: pointer.y - img.getScaledHeight() / 2,
+      left: mousePointer.x - img.getScaledWidth() / 2,
+      top: mousePointer.y - img.getScaledHeight() / 2,
       selectable: true,
       fill: 'black'
     });
