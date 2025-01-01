@@ -104,16 +104,30 @@ body #diagramming-content #diagrams-elements-editor-div {
 body #diagramming-content #diagrams-elements-editor-div #selected-image-div {
   display: none;
 }
-body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-text-div {
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-h2 {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #selected-element-text-input-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: -10px;
+}
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #selected-element-text-input-div #selected-element-text-input {
+  padding: 0.25rem;
+  width: 95%;
+  border: 1px solid #CCCCCC;
+  border-radius: 3px;
+  font-size: 1rem;
 }
 body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: -10px;
+  margin-top: 10px;
   gap: 5px;
 }
 body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div button {

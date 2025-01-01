@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const diagramsMakerCanvasHtmlElement = document.getElementById('diagrams-maker-canvas');
   const selectedImageDiv = document.getElementById('selected-image-div');
   const nonSelectedImageDiv = document.getElementById('non-selected-image-div');
+  const selectedElementTextInput = document.getElementById('selected-element-text-input');
+  const textFontSizeInput = document.getElementById('text-font-size-input');
 
   const diagramElements = document.querySelectorAll('.diagram-element');
 
@@ -15,7 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let canvasIsPanning = false;
   let canvasLastPanPosition = { x: 0, y: 0 };
 
-  let selectedCanvasObjects = [];
+  let selectedCanvasObjectsForEdit = [];
+  let selectedCanvasObjectsForDelete = [];
   let copiedOrCutCanvasObjects = [];
 
   const centeredImages = [
@@ -57,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   canvasContainer.addEventListener('drop', (event) => {
     event.preventDefault();
+    mousePointer = diagramsMakerCanvas.getPointer(event);
 
     const imageUrl = event.dataTransfer.getData('text/plain');
 
@@ -78,10 +82,14 @@ document.addEventListener('DOMContentLoaded', () => {
         img.linkedText = textBox;
         setCombinedCanvasDiagramElementAndTextBoxAttributes(img, textBox);
         diagramsMakerCanvas.add(textBox);
-        img.linkedText.bringToFront();
       }
 
       diagramsMakerCanvas.add(img);
+
+      if (img.linkedText) {
+        img.linkedText.bringToFront();
+      }
+
       diagramsMakerCanvas.setActiveObject(img);
       diagramsMakerCanvas.renderAll();
     });
@@ -100,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
       canvasIsPanning = true;
       canvasLastPanPosition.x = event.e.clientX;
       canvasLastPanPosition.y = event.e.clientY;
-      diagramsMakerCanvas.selection = false; // Disable object selection while panning
+      diagramsMakerCanvas.selection = false;
     }
   });
 
@@ -152,16 +160,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    nonSelectedImageDiv.style.display = 'block';
-    selectedImageDiv.style.display = 'none';
-
     diagramsMakerCanvas.renderAll();
+
+    selectedCanvasObjectsForDelete = [];
   });
 
   document.addEventListener('keydown', (event) => {
-    selectedCanvasObjects = diagramsMakerCanvas.getActiveObjects();
-    
-
     if (event.ctrlKey && event.key === 'z') {
       event.preventDefault();
       if (canvasHistory.length > 0) {
@@ -180,10 +184,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    if (event.ctrlKey && event.key === 'c' && selectedCanvasObjects.length > 0) {
+    if (event.ctrlKey && event.key === 'c' && diagramsMakerCanvas.getActiveObjects().length > 0) {
       copiedOrCutCanvasObjects = [];
 
-      selectedCanvasObjects.forEach((img) => {
+      diagramsMakerCanvas.getActiveObjects().forEach((img) => {
         img.clone((clonedImg) => {
           setCanvasDiagramElementAttributes(clonedImg);
 
@@ -202,10 +206,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    if (event.ctrlKey && event.key === 'x' && selectedCanvasObjects.length > 0) {
+    if (event.ctrlKey && event.key === 'x' && diagramsMakerCanvas.getActiveObjects().length > 0) {
       copiedOrCutCanvasObjects = [];
 
-      selectedCanvasObjects.forEach((img) => {
+      diagramsMakerCanvas.getActiveObjects().forEach((img) => {
         img.clone((clonedImg) => {
           setCanvasDiagramElementAttributes(clonedImg);
 
@@ -224,7 +228,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
           diagramsMakerCanvas.remove(img);
           diagramsMakerCanvas.discardActiveObject();
-          selectedCanvasObjects = [];
         });
       });
     }
@@ -241,10 +244,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
           setCanvasDiagramElementAttributes(pastedImg);
 
-          console.log("Puta bojoto: ");
-          console.log(mousePointer);
-          console.log(pastedImg);
-
           if (copiedObj.text) {
             copiedObj.text.clone((pastedTextBox) => {
               setCanvasDiagramElementTextBoxAttributes(pastedTextBox);
@@ -255,16 +254,19 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           diagramsMakerCanvas.add(pastedImg);
+
+          if (pastedImg.linkedText) {
+            pastedImg.linkedText.bringToFront();
+          }
+
           diagramsMakerCanvas.setActiveObject(pastedImg);
           diagramsMakerCanvas.renderAll();
         });
-
-        console.log("Pasted objects:", copiedOrCutCanvasObjects);
       });
     }
 
-    if (event.key === 'Backspace' && selectedCanvasObjects) {
-      selectedCanvasObjects.forEach((obj) => {
+    if (event.key === 'Backspace' && selectedCanvasObjectsForDelete.length > 0) {
+      selectedCanvasObjectsForDelete.forEach((obj) => {
         if (obj.type === 'image') {
           if (obj.linkedText) {
             diagramsMakerCanvas.remove(obj.linkedText);
@@ -272,11 +274,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         diagramsMakerCanvas.remove(obj);
+        diagramsMakerCanvas.discardActiveObject();
         diagramsMakerCanvas.renderAll();
       });
 
-      diagramsMakerCanvas.discardActiveObject();
       diagramsMakerCanvas.renderAll();
+
+      nonSelectedImageDiv.style.display = 'block';
+      selectedImageDiv.style.display = 'none';
+
+      selectedCanvasObjectsForDelete = [];
     }
 
     if (event.key === '+') {
@@ -291,9 +298,9 @@ document.addEventListener('DOMContentLoaded', () => {
       TODO: 
       Los dificiles
       *Exportación tiene que capturar todos los elementos incluso los que no se ven en el canvasContainer. (Pulir)
-      *Control Z y Control Y
-      *Control X
-      *Control C y Control V.
+      *Control Z 
+      *Control Y 
+      *Cuando se pegan más de un elemento cortado o pegado, corregir sus posiciones y todos deben de estar seleccionados.
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
       *En el div en blanco, ahí se debe de poder editar el texto.
       *Pasar elemento hacia en frente o hacia atrás.
@@ -367,6 +374,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  selectedElementTextInput.addEventListener('input', (event) => {
+    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = selectedElementTextInput.value;
+    console.log('Chemamas');
+  });
+
   function setCanvasDiagramElementAttributes(img) {
     img.scaleToWidth(100);
     img.scaleToHeight(75);
@@ -418,11 +430,6 @@ document.addEventListener('DOMContentLoaded', () => {
         tr: false
       });
     }
-
-    img.on('selected', () => {
-      nonSelectedImageDiv.style.display = 'none';
-      selectedImageDiv.style.display = 'block';
-    });
   }
 
   function setCanvasDiagramElementTextBoxAttributes(textBox) {
@@ -477,6 +484,25 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       });
+    });
+
+    img.on('selected', () => {
+      if (selectedCanvasObjectsForEdit.includes(img)) {
+        const index = selectedCanvasObjectsForEdit.indexOf(img);
+        if (index !== -1) {
+          selectedCanvasObjectsForEdit.splice(index, 1);
+        }
+      }
+
+      if (img.linkedText) {
+        selectedElementTextInput.value = img.linkedText.text;
+      }
+
+      selectedCanvasObjectsForEdit.push(img);
+      selectedCanvasObjectsForDelete.push(img);
+
+      nonSelectedImageDiv.style.display = 'none';
+      selectedImageDiv.style.display = 'block';
     });
   }
 
