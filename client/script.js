@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const exportButton = document.getElementById('export-button');
   const canvasContainer = document.getElementById('diagramming-content');
   const diagramsMakerCanvasHtmlElement = document.getElementById('diagrams-maker-canvas');
+  const diagramsElementsEditorDiv = document.getElementById('diagrams-elements-editor-div');
   const selectedImageDiv = document.getElementById('selected-image-div');
   const nonSelectedImageDiv = document.getElementById('non-selected-image-div');
   const selectedElementTextInput = document.getElementById('selected-element-text-input');
@@ -131,26 +132,20 @@ document.addEventListener('DOMContentLoaded', () => {
     diagramsMakerCanvas.selection = true; // Re-enable object selection
   });
 
-  diagramsMakerCanvas.on('object:modified', saveCanvasState);
-  diagramsMakerCanvas.on('object:added', saveCanvasState);
+  diagramsMakerCanvas.on('object:added', (event) => {
+    handleCanvasObjectEvent(event);
+    saveCanvasState();
+  });
+
   diagramsMakerCanvas.on('object:removed', saveCanvasState);
 
   diagramsMakerCanvas.on('object:moving', (event) => {
-    const movingObject = event.target;
-    if (movingObject && movingObject.linkedText) {
-      if (centeredImages.includes(movingObject.imageUrl)) {
-        movingObject.linkedText.left = movingObject.left + movingObject.getScaledWidth() / 2 - movingObject.linkedText.width / 2;
-        movingObject.linkedText.top = movingObject.top + movingObject.getScaledHeight() / 2 - movingObject.linkedText.height / 2;
-      } else if (belowImages.includes(movingObject.imageUrl)) {
-        movingObject.linkedText.left = movingObject.left + movingObject.getScaledWidth() / 2 - movingObject.linkedText.width / 2;
-        movingObject.linkedText.top = movingObject.top + movingObject.getScaledHeight() + 10;
-      } else if (aboveImages.includes(movingObject.imageUrl)) {
-        movingObject.linkedText.left = movingObject.left + movingObject.getScaledWidth() / 2 - movingObject.linkedText.width / 2;
-        movingObject.linkedText.top = movingObject.top - movingObject.linkedText.height + 10;
-      }
-      movingObject.linkedText.bringToFront();
-    }
-    diagramsMakerCanvas.renderAll();
+    handleCanvasObjectEvent(event, true);
+  });
+
+  diagramsMakerCanvas.on('object:modified', (event) => {
+    handleCanvasObjectEvent(event);
+    saveCanvasState();
   });
 
   diagramsMakerCanvas.on('selection:cleared', () => {
@@ -296,15 +291,20 @@ document.addEventListener('DOMContentLoaded', () => {
   helpButton.addEventListener('click', () => {
     alert(`
       TODO: 
-      Los dificiles
+      Funcionalidades a implementar:
       *Exportación tiene que capturar todos los elementos incluso los que no se ven en el canvasContainer. (Pulir)
       *Control Z 
       *Control Y 
       *Cuando se pegan más de un elemento cortado o pegado, corregir sus posiciones y todos deben de estar seleccionados.
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
-      *En el div en blanco, ahí se debe de poder editar el texto.
+      *Cambiar el tamaño del texto.
+      *Funcionalidad botones de ajuste de texto y ponerles sus imágenes.
       *Pasar elemento hacia en frente o hacia atrás.
       *Agregar el include o extend a la flecha de include/extend
+
+      Bugs:
+      *Al eliminar un elemento se eliminan todos.
+      *No se pueden eliminar los elementos que no tienen texto.
 
       *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
 
@@ -376,8 +376,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   selectedElementTextInput.addEventListener('input', (event) => {
     selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = selectedElementTextInput.value;
-    console.log('Chemamas');
+    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+    diagramsMakerCanvas.renderAll();
   });
+
+  diagramsElementsEditorDiv.addEventListener('click', (event) => {
+    diagramsMakerCanvas.discardActiveObject();
+  });
+
+  function handleCanvasObjectEvent(event, shouldRender = false) {
+    const selectedElements = event.target;
+
+    if (selectedElements.type === 'activeSelection') {
+      selectedElements._objects.forEach((obj) => {
+        if (obj.linkedText) {
+          updateLinkedTextPositionForCanvasElement(obj);
+        }
+      });
+    } else if (selectedElements.linkedText) {
+      updateLinkedTextPositionForCanvasElement(selectedElements);
+    }
+
+    if (shouldRender) {
+      diagramsMakerCanvas.renderAll();
+    }
+  }
 
   function setCanvasDiagramElementAttributes(img) {
     img.scaleToWidth(100);
@@ -434,6 +457,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setCanvasDiagramElementTextBoxAttributes(textBox) {
     textBox.set({
+      width: 100 * 0.75,
+      height: 75,
       fontSize: 16,
       fontFamily: 'Arial',
       fontStyle: 'normal',
@@ -452,38 +477,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setCombinedCanvasDiagramElementAndTextBoxAttributes(img, textBox) {
-    if (centeredImages.includes(img.imageUrl)) {
-      textBox.set({
-        left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
-        top: img.top + img.getScaledHeight() / 2 - textBox.height / 2
-      });
-    } else if (belowImages.includes(img.imageUrl)) {
-      textBox.set({
-        left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
-        top: img.top + img.getScaledHeight() + 10
-      });
-    } else if (aboveImages.includes(img.imageUrl)) {
-      textBox.set({
-        left: img.left + img.getScaledWidth() / 2 - textBox.width / 2,
-        top: img.top - textBox.height + 10
-      });
-    }
+    updateLinkedTextPositionForCanvasElement(img);
 
-    ['scaling', 'rotating'].forEach((event) => {
-      img.on(event, () => {
-        if (img.linkedText) {
-          if (centeredImages.includes(img.imageUrl)) {
-            img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
-            img.linkedText.top = img.top + img.getScaledHeight() / 2 - textBox.height / 2;
-          } else if (belowImages.includes(img.imageUrl)) {
-            img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
-            img.linkedText.top = img.top + img.getScaledHeight() + 10;
-          } else if (aboveImages.includes(img.imageUrl)) {
-            img.linkedText.left = img.left + img.getScaledWidth() / 2 - textBox.width / 2;
-            img.linkedText.top = img.top - textBox.height + 10;
-          }
-        }
-      });
+
+    img.on('scaling', () => {
+      if (img.linkedText) {
+        img.linkedText.set({
+          width: img.getScaledWidth() * 0.75,
+          height: img.getScaledHeight()
+        });
+        
+        updateLinkedTextPositionForCanvasElement(img);
+      }
+    })
+
+    img.on('rotating', () => {
+      if (img.linkedText) {
+        updateLinkedTextPositionForCanvasElement(img);
+      }
     });
 
     img.on('selected', () => {
@@ -496,6 +507,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (img.linkedText) {
         selectedElementTextInput.value = img.linkedText.text;
+
+        console.log("img.linkedText.getScaledWidth: " + img.linkedText.getScaledWidth());
+        console.log("img.linkedText.getScaledHeight: " + img.linkedText.getScaledHeight());
+        console.log("img.getScaledWidth: " + img.getScaledWidth());
+        console.log("img.getScaledHeight: " + img.getScaledHeight());
+
+        updateLinkedTextPositionForCanvasElement(img);
       }
 
       selectedCanvasObjectsForEdit.push(img);
@@ -511,6 +529,21 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log(canvasHistory.length);
 
     canvasHistory.push(diagramsMakerCanvas.toJSON());
+  }
+
+  function updateLinkedTextPositionForCanvasElement(canvasElement) {
+    if (centeredImages.includes(canvasElement.imageUrl)) {
+      canvasElement.linkedText.left = canvasElement.left + canvasElement.getScaledWidth() / 2 - canvasElement.linkedText.width / 2;
+      canvasElement.linkedText.top = canvasElement.top + canvasElement.getScaledHeight() / 2 - canvasElement.linkedText.height / 2;
+    } else if (belowImages.includes(canvasElement.imageUrl)) {
+      canvasElement.linkedText.left = canvasElement.left + canvasElement.getScaledWidth() / 2 - canvasElement.linkedText.width / 2;
+      canvasElement.linkedText.top = canvasElement.top + canvasElement.getScaledHeight() + 10;
+    } else if (aboveImages.includes(canvasElement.imageUrl)) {
+      canvasElement.linkedText.left = canvasElement.left + canvasElement.getScaledWidth() / 2 - canvasElement.linkedText.width / 2;
+      canvasElement.linkedText.top = canvasElement.top - canvasElement.linkedText.height + 10;
+    }
+
+    canvasElement.linkedText.bringToFront();
   }
 
   function zoomCanvas(factor) {
