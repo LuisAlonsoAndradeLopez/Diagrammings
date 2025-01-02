@@ -4,10 +4,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvasContainer = document.getElementById('diagramming-content');
   const diagramsMakerCanvasHtmlElement = document.getElementById('diagrams-maker-canvas');
   const diagramsElementsEditorDiv = document.getElementById('diagrams-elements-editor-div');
-  const selectedImageDiv = document.getElementById('selected-image-div');
   const nonSelectedImageDiv = document.getElementById('non-selected-image-div');
+  const selectedImageDiv = document.getElementById('selected-image-div');
+  const textH2 = document.getElementById('text-h2');
+  const selectedElementTextInputDiv = document.getElementById('selected-element-text-input-div');
   const selectedElementTextInput = document.getElementById('selected-element-text-input');
+  const textModifiersDiv = document.getElementById('text-modifiers-div');
+  const textAlignLeftButton = document.getElementById('text-align-left-button');
+  const textAlignCenterButton = document.getElementById('text-align-center-button');
+  const textAlignRightButton = document.getElementById('text-align-right-button');
+  const textAlignJustifyButton = document.getElementById('text-align-justify-button');
   const textFontSizeInput = document.getElementById('text-font-size-input');
+  const includeExtendsInputsDiv = document.getElementById('include-extends-inputs-div');
+  const includeInput = document.getElementById('include-input');
+  const extendsInput = document.getElementById('extends-input');
+  const setElementsInFrontOfButton = document.getElementById('set-elements-in-front-of-button');
+  const setElementsBehindButton = document.getElementById('set-elements-behind-button');
+  const setElementsInFrontButton = document.getElementById('set-elements-in-front-button');
+  const setElementsAtTheBottomButton = document.getElementById('set-elements-at-the-bottom-button');
 
   const diagramElements = document.querySelectorAll('.diagram-element');
 
@@ -22,13 +36,21 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedCanvasObjectsForDelete = [];
   let copiedOrCutCanvasObjects = [];
 
+  const aboveImages = ['system.png'];
+
+  const belowImages = ['actor.png', 'dependency.png'];
+
   const centeredImages = [
     'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
     'process.png', 'start_end.png', 'use_case.png'
   ];
 
-  const belowImages = ['actor.png'];
-  const aboveImages = ['system.png'];
+  const includeAndExtendsTextImages = ['dependency.png'];
+
+  const normalTextImages = [
+    'actor.png', 'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
+    'process.png', 'start_end.png', 'system.png', 'use_case.png'
+  ];
 
   const notRotatingImages = [
     'actor.png', 'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
@@ -47,6 +69,10 @@ document.addEventListener('DOMContentLoaded', () => {
     'asociation.png', 'dependency.png', 'generalization.png', 'flow.png'
   ];
 
+  const notTextImages = [
+    'asociation.png', 'generalization.png', 'flow.png'
+  ];
+
   let mousePointer = null;
 
   diagramElements.forEach((element) => {
@@ -61,6 +87,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   canvasContainer.addEventListener('drop', (event) => {
     event.preventDefault();
+
+    selectedCanvasObjectsForEdit = [];
+    selectedCanvasObjectsForDelete = [];
+
     mousePointer = diagramsMakerCanvas.getPointer(event);
 
     const imageUrl = event.dataTransfer.getData('text/plain');
@@ -77,14 +107,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
       setCanvasDiagramElementAttributes(img);
 
-      if (!notScalingYAndFlipImages.includes(img.imageUrl)) {
+      if (!notTextImages.includes(img.imageUrl)) {
         const textBox = new fabric.Textbox('Texto');
+
+        if (includeAndExtendsTextImages.includes(img.imageUrl)) {
+          textBox.set({ text: '<<include>>' });
+        }
+
         setCanvasDiagramElementTextBoxAttributes(textBox);
         img.linkedText = textBox;
-        setCombinedCanvasDiagramElementAndTextBoxAttributes(img, textBox);
         diagramsMakerCanvas.add(textBox);
       }
 
+      setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
       diagramsMakerCanvas.add(img);
 
       if (img.linkedText) {
@@ -94,6 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
       diagramsMakerCanvas.setActiveObject(img);
       diagramsMakerCanvas.renderAll();
     });
+  });
+
+  diagramsElementsEditorDiv.addEventListener('click', (event) => {
+    diagramsMakerCanvas.discardActiveObject();
   });
 
   diagramsMakerCanvasHtmlElement.addEventListener('wheel', (event) => {
@@ -225,6 +264,9 @@ document.addEventListener('DOMContentLoaded', () => {
           diagramsMakerCanvas.discardActiveObject();
         });
       });
+
+      nonSelectedImageDiv.style.display = 'block';
+      selectedImageDiv.style.display = 'none';
     }
 
     if (event.ctrlKey && event.key === 'v' && copiedOrCutCanvasObjects.length > 0) {
@@ -297,16 +339,12 @@ document.addEventListener('DOMContentLoaded', () => {
       *Control Y 
       *Cuando se pegan más de un elemento cortado o pegado, corregir sus posiciones y todos deben de estar seleccionados.
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
-      *Cambiar el tamaño del texto.
-      *Funcionalidad botones de ajuste de texto y ponerles sus imágenes.
+      *Ponerles sus imágenes a botones de ajuste de texto.
       *Pasar elemento hacia en frente o hacia atrás.
-      *Agregar el include o extend a la flecha de include/extend
-
-      Bugs:
-      *Al eliminar un elemento se eliminan todos.
-      *No se pueden eliminar los elementos que no tienen texto.
 
       *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
+
+      Bugs
 
       *Ctrl + Z: Revertir cambios (WIP).
       *Ctrl + Y: Recuperar elementos de la reversión de cambios (WIP).
@@ -374,14 +412,113 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  includeInput.addEventListener('click', () => {
+    extendsInput.checked = false;
+    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = "<<include>>";
+    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+    diagramsMakerCanvas.renderAll();
+  });
+
+  extendsInput.addEventListener('click', () => {
+    includeInput.checked = false;
+    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = "<<extends>>";
+    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+    diagramsMakerCanvas.renderAll();
+  });
+
   selectedElementTextInput.addEventListener('input', (event) => {
     selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = selectedElementTextInput.value;
     updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
     diagramsMakerCanvas.renderAll();
   });
 
-  diagramsElementsEditorDiv.addEventListener('click', (event) => {
-    diagramsMakerCanvas.discardActiveObject();
+
+  //TAKE REFERENCE
+  setElementsInFrontOfButton.addEventListener('click', () => {
+    const activeObjects = diagramsMakerCanvas.getActiveObjects();
+    activeObjects.forEach((object) => {
+      applyToElementAndLinkedText('bringForward', object);
+    });
+    diagramsMakerCanvas.renderAll();
+
+    diagramsMakerCanvas[action](object);
+
+    // If the object has linkedText, apply the same action to the linkedText
+    if (object.linkedText) {
+      diagramsMakerCanvas[action](object.linkedText);
+    }
+  });
+
+  setElementsBehindButton.addEventListener('click', () => {
+    const activeObjects = diagramsMakerCanvas.getActiveObjects();
+    activeObjects.forEach((object) => {
+      applyToElementAndLinkedText('sendBackwards', object);
+    });
+    diagramsMakerCanvas.renderAll();
+  });
+
+  setElementsInFrontButton.addEventListener('click', () => {
+    const activeObjects = diagramsMakerCanvas.getActiveObjects();
+    activeObjects.forEach((object) => {
+      applyToElementAndLinkedText('bringToFront', object);
+    });
+    diagramsMakerCanvas.renderAll();
+  });
+
+  setElementsAtTheBottomButton.addEventListener('click', () => {
+    const activeObjects = diagramsMakerCanvas.getActiveObjects();
+    activeObjects.forEach((object) => {
+      applyToElementAndLinkedText('sendToBack', object);
+    });
+    diagramsMakerCanvas.renderAll();
+  });
+
+  textAlignLeftButton.addEventListener('click', () => {
+    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign = 'left';
+    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+    diagramsMakerCanvas.renderAll();
+  });
+
+  textAlignCenterButton.addEventListener('click', () => {
+    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign = 'center';
+    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+    diagramsMakerCanvas.renderAll();
+  });
+
+  textAlignRightButton.addEventListener('click', () => {
+    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign = 'right';
+    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+    diagramsMakerCanvas.renderAll();
+  });
+
+  textAlignJustifyButton.addEventListener('click', () => {
+    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign = 'justify';
+    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+    diagramsMakerCanvas.renderAll();
+  });
+
+  textFontSizeInput.addEventListener('keydown', (event) => {
+    const allowedKeys = [
+      'ArrowUp', 'ArrowDown', 'Backspace', 'Tab', 'Delete', 'Enter'
+    ];
+
+    if (!allowedKeys.includes(event.key) && (event.key < '0' || event.key > '9')) {
+      event.preventDefault();
+    }
+  });
+
+  textFontSizeInput.addEventListener('input', (event) => {
+    if (textFontSizeInput.value < 8) {
+      textFontSizeInput.value = 8;
+    }
+
+    if (textFontSizeInput.value > 32) {
+      textFontSizeInput.value = 32;
+    }
+
+    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.fontSize = textFontSizeInput.value;
+    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+    diagramsMakerCanvas.renderAll();
   });
 
   function handleCanvasObjectEvent(event, shouldRender = false) {
@@ -476,17 +613,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function setCombinedCanvasDiagramElementAndTextBoxAttributes(img, textBox) {
-    updateLinkedTextPositionForCanvasElement(img);
-
-
+  function setCombinedCanvasDiagramElementAndTextBoxAttributes(img) {
     img.on('scaling', () => {
       if (img.linkedText) {
         img.linkedText.set({
           width: img.getScaledWidth() * 0.75,
           height: img.getScaledHeight()
         });
-        
+
         updateLinkedTextPositionForCanvasElement(img);
       }
     })
@@ -507,17 +641,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (img.linkedText) {
         selectedElementTextInput.value = img.linkedText.text;
-
-        console.log("img.linkedText.getScaledWidth: " + img.linkedText.getScaledWidth());
-        console.log("img.linkedText.getScaledHeight: " + img.linkedText.getScaledHeight());
-        console.log("img.getScaledWidth: " + img.getScaledWidth());
-        console.log("img.getScaledHeight: " + img.getScaledHeight());
-
+        textFontSizeInput.value = img.linkedText.fontSize;
         updateLinkedTextPositionForCanvasElement(img);
       }
 
       selectedCanvasObjectsForEdit.push(img);
       selectedCanvasObjectsForDelete.push(img);
+
+      if (normalTextImages.includes(img.imageUrl)) {
+        textH2.style.display = 'flex';
+        selectedElementTextInputDiv.style.display = 'flex';
+        textModifiersDiv.style.display = 'flex';
+        includeExtendsInputsDiv.style.display = 'none';
+      }
+
+      if (notTextImages.includes(img.imageUrl)) {
+        textH2.style.display = 'none';
+        selectedElementTextInputDiv.style.display = 'none';
+        textModifiersDiv.style.display = 'none';
+        includeExtendsInputsDiv.style.display = 'none';
+      }
+
+      if (includeAndExtendsTextImages.includes(img.imageUrl)) {
+        textH2.style.display = 'flex';
+        selectedElementTextInputDiv.style.display = 'none';
+        textModifiersDiv.style.display = 'none';
+        includeExtendsInputsDiv.style.display = 'flex';
+
+        if (img.linkedText.text === "<<include>>") {
+          includeInput.checked = true;
+          extendsInput.checked = false;
+        }
+
+        if (img.linkedText.text === "<<extends>>") {
+          includeInput.checked = false;
+          extendsInput.checked = true;
+        }
+      }
 
       nonSelectedImageDiv.style.display = 'none';
       selectedImageDiv.style.display = 'block';
