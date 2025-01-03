@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const includeExtendsInputsDiv = document.getElementById('include-extends-inputs-div');
   const includeInput = document.getElementById('include-input');
   const extendsInput = document.getElementById('extends-input');
+  const positioningDiv = document.getElementById('positioning-div');
   const setElementsInFrontOfButton = document.getElementById('set-elements-in-front-of-button');
   const setElementsBehindButton = document.getElementById('set-elements-behind-button');
   const setElementsInFrontButton = document.getElementById('set-elements-in-front-button');
@@ -197,15 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (addedObject.type === 'textbox') {
       canvasHistory.splice(canvasHistory.length - 2, 1);
     }
-
-    //Don't remove this code, is for helper in the canvasHistory
-    //if (addedObject.linkedText) {
-    //  const canvasHistoryLastState = canvasHistory[canvasHistory.length - 1];
-    //  const canvasHistoryLastStateLastObject = canvasHistoryLastState.objects[canvasHistoryLastState.objects.length - 1];
-    //  if (addedObject.linkedText.text == canvasHistoryLastStateLastObject.text) {
-    //    canvasHistory.splice(canvasHistory.length - 2, 1);
-    //  }
-    //}
   });
 
   //For understand this function behavior and if you want to modify, you should understand the document.addEventListener(keydown) if (event.key === 'Backspace' && selectedCanvasObjectsForDelete.length > 0) {} behavior.
@@ -241,10 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'o') {
-      console.log(diagramsMakerCanvas.getObjects());
-    }
-
     if (event.ctrlKey && event.key === 'z') {
       event.preventDefault();
       if (canvasHistory.length > 0) {
@@ -391,7 +379,6 @@ document.addEventListener('DOMContentLoaded', () => {
       *Control Y: Agregarle el saveCanvasState a los elementos gráficos y coregir el bug de atributos por el loadToJson.
       *Cuando se pegan más de un elemento cortado o pegado, corregir sus posiciones y todos deben de estar seleccionados.
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
-      *Pasar bien los elementos hacia en frente o hacia atrás, falta lo del texto.
 
       *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
 
@@ -499,37 +486,67 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   setElementsInFrontOfButton.addEventListener('click', () => {
-    const selectedObjectLinkedText = selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText;
-    const objectForComparision = diagramsMakerCanvas.getObjects()[selectedObjectLinkedText + 2];
+    const canvasObjects = diagramsMakerCanvas.getObjects();
+    const objectForBringForward = selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1];
+    const selectedObjectOnCanvasObjectsIndex = canvasObjects.indexOf(objectForBringForward);
+    const objectForComparisionBetweenTheLinkedTextObject = canvasObjects[selectedObjectOnCanvasObjectsIndex + 2];
+    const objectForComparisionBetweenTheNotLinkedTextObject = canvasObjects[selectedObjectOnCanvasObjectsIndex + 1];
 
-    if (diagramsMakerCanvas.getObjects().indexOf(objectForComparision).type !== 'text') {
-      console.log('pene');
-      diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-      diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
+    if (objectForBringForward.linkedText) {
+      if (objectForComparisionBetweenTheLinkedTextObject) {
+        if (objectForComparisionBetweenTheLinkedTextObject.linkedText) {
+          diagramsMakerCanvas.bringForward(objectForBringForward.linkedText);
+          diagramsMakerCanvas.bringForward(objectForBringForward.linkedText);
+          diagramsMakerCanvas.bringForward(objectForBringForward);
+          diagramsMakerCanvas.bringForward(objectForBringForward);
+        } else {
+          diagramsMakerCanvas.bringForward(objectForBringForward.linkedText);
+          diagramsMakerCanvas.bringForward(objectForBringForward);
+        }
+      }
+    } else {
+      if (objectForComparisionBetweenTheNotLinkedTextObject) {
+        if (objectForComparisionBetweenTheNotLinkedTextObject.linkedText) {
+          diagramsMakerCanvas.bringForward(objectForBringForward);
+          diagramsMakerCanvas.bringForward(objectForBringForward);
+        } else {
+          diagramsMakerCanvas.bringForward(objectForBringForward);
+        }
+      }
     }
-
-    if (diagramsMakerCanvas.getObjects().indexOf(selectedObjectLinkedText) + 2 > diagramsMakerCanvas.getObjects().length) {
-      console.log('de bebe');
-      diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
-      diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-
-    }
-
-
-    //diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
-    //diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
-    //diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-    //diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-
 
     diagramsMakerCanvas.renderAll();
   });
 
   setElementsBehindButton.addEventListener('click', () => {
-    diagramsMakerCanvas.sendBackwards(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-    diagramsMakerCanvas.sendBackwards(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-    diagramsMakerCanvas.sendBackwards(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
-    diagramsMakerCanvas.sendBackwards(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
+    const canvasObjects = diagramsMakerCanvas.getObjects();
+    const objectForBringBackwards = selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1];
+    const selectedObjectOnCanvasObjectsIndex = canvasObjects.indexOf(objectForBringBackwards);
+    const objectForComparision = canvasObjects[selectedObjectOnCanvasObjectsIndex - 2];
+
+    if (objectForBringBackwards.linkedText) {
+      if (objectForComparision) {
+        if (objectForComparision.linkedText) {
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards.linkedText);
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards.linkedText);
+        } else {
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards.linkedText);
+        }
+      }
+    } else {
+      if (objectForComparision) {
+        if (objectForComparision.linkedText) {
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
+        } else {
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
+        }
+      }
+    }
+
     diagramsMakerCanvas.renderAll();
   });
 
@@ -720,11 +737,18 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedCanvasObjectsForEdit.push(img);
       selectedCanvasObjectsForDelete.push(img);
 
+      if (diagramsMakerCanvas.getActiveObjects().length > 1) {
+        nonSelectedImageDiv.style.display = 'block';
+        selectedImageDiv.style.display = 'none';
+        return;
+      }
+
       if (normalTextImages.includes(img.imageUrl)) {
         textH2.style.display = 'flex';
         selectedElementTextInputDiv.style.display = 'flex';
         textModifiersDiv.style.display = 'flex';
         includeExtendsInputsDiv.style.display = 'none';
+        positioningDiv.style.display = 'block';
       }
 
       if (notTextImages.includes(img.imageUrl)) {
@@ -732,6 +756,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedElementTextInputDiv.style.display = 'none';
         textModifiersDiv.style.display = 'none';
         includeExtendsInputsDiv.style.display = 'none';
+        positioningDiv.style.display = 'block';
       }
 
       if (includeAndExtendsTextImages.includes(img.imageUrl)) {
@@ -739,6 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedElementTextInputDiv.style.display = 'none';
         textModifiersDiv.style.display = 'none';
         includeExtendsInputsDiv.style.display = 'flex';
+        positioningDiv.style.display = 'block';
 
         if (img.linkedText.text === "<<include>>") {
           includeInput.checked = true;
