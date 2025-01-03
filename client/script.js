@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const diagramsMakerCanvas = new fabric.Canvas(diagramsMakerCanvasHtmlElement);
 
   let canvasHistory = [];
+  let canvasHistoryRedo = [];
+
   let canvasZoomLevel = 1;
   let canvasIsPanning = false;
   let canvasLastPanPosition = { x: 0, y: 0 };
@@ -105,25 +107,41 @@ document.addEventListener('DOMContentLoaded', () => {
         imageUrl: imageUrl.split('/').pop()
       });
 
+      let textBox;
+
       setCanvasDiagramElementAttributes(img);
 
       if (!notTextImages.includes(img.imageUrl)) {
-        const textBox = new fabric.Textbox('Texto');
-
-        if (includeAndExtendsTextImages.includes(img.imageUrl)) {
-          textBox.set({ text: '<<include>>' });
-        }
+        textBox = new fabric.Textbox('Texto');
 
         setCanvasDiagramElementTextBoxAttributes(textBox);
         img.linkedText = textBox;
-        diagramsMakerCanvas.add(textBox);
+
+        if (includeAndExtendsTextImages.includes(img.imageUrl)) {
+          textBox.set({
+            text: '<<include>>',
+            editable: true,
+            event: true,
+            hasControls: true,
+            hasBorders: true,
+            selectable: true,
+            hasRotatingPoint: false,
+            lockRotation: true
+          });
+
+          textBox.setControlsVisibility({
+            mtr: false
+          });
+        }
+
       }
 
       setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
       diagramsMakerCanvas.add(img);
 
       if (img.linkedText) {
-        img.linkedText.bringToFront();
+        diagramsMakerCanvas.add(textBox);
+        img.linkedText.bringForward();
       }
 
       diagramsMakerCanvas.setActiveObject(img);
@@ -172,11 +190,34 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   diagramsMakerCanvas.on('object:added', (event) => {
+    const addedObject = event.target;
     handleCanvasObjectEvent(event);
     saveCanvasState();
+
+    if (addedObject.type === 'textbox') {
+      canvasHistory.splice(canvasHistory.length - 2, 1);
+    }
+
+    //Don't remove this code, is for helper in the canvasHistory
+    //if (addedObject.linkedText) {
+    //  const canvasHistoryLastState = canvasHistory[canvasHistory.length - 1];
+    //  const canvasHistoryLastStateLastObject = canvasHistoryLastState.objects[canvasHistoryLastState.objects.length - 1];
+    //  if (addedObject.linkedText.text == canvasHistoryLastStateLastObject.text) {
+    //    canvasHistory.splice(canvasHistory.length - 2, 1);
+    //  }
+    //}
   });
 
-  diagramsMakerCanvas.on('object:removed', saveCanvasState);
+  //For understand this function behavior and if you want to modify, you should understand the document.addEventListener(keydown) if (event.key === 'Backspace' && selectedCanvasObjectsForDelete.length > 0) {} behavior.
+  diagramsMakerCanvas.on('object:removed', (event) => {
+    const removedObject = event.target;
+    diagramsMakerCanvas.renderAll();
+    saveCanvasState();
+
+    if (removedObject.type === 'textbox') {
+      canvasHistory.splice(canvasHistory.length - 2, 1);
+    }
+  });
 
   diagramsMakerCanvas.on('object:moving', (event) => {
     handleCanvasObjectEvent(event, true);
@@ -200,11 +241,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('keydown', (event) => {
+    if (event.key === 'o') {
+      console.log(diagramsMakerCanvas.getObjects());
+    }
+
     if (event.ctrlKey && event.key === 'z') {
       event.preventDefault();
       if (canvasHistory.length > 0) {
-        console.log('El puta boja');
-        diagramsMakerCanvas.loadFromJSON(canvasHistory[canvasHistory.length], () => {
+        const currentState = canvasHistory.pop();
+        canvasHistoryRedo.push(currentState);
+
+        diagramsMakerCanvas.loadFromJSON(canvasHistory[canvasHistory.length - 1], () => {
           diagramsMakerCanvas.renderAll();
         });
       }
@@ -212,10 +259,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (event.ctrlKey && event.key === 'y') {
       event.preventDefault();
-      console.log('Piensa que va a vivir del basquetbol');
-      diagramsMakerCanvas.loadFromJSON(canvasHistory[canvasHistory.length], () => {
-        diagramsMakerCanvas.renderAll();
-      });
+      if (canvasHistoryRedo.length > 0) {
+        const nextState = canvasHistoryRedo.pop();
+        canvasHistory.push(diagramsMakerCanvas.toJSON());
+
+        diagramsMakerCanvas.loadFromJSON(nextState, () => {
+          diagramsMakerCanvas.renderAll();
+        });
+      }
     }
 
     if (event.ctrlKey && event.key === 'c' && diagramsMakerCanvas.getActiveObjects().length > 0) {
@@ -293,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
           diagramsMakerCanvas.add(pastedImg);
 
           if (pastedImg.linkedText) {
-            pastedImg.linkedText.bringToFront();
+            pastedImg.linkedText.bringForward();
           }
 
           diagramsMakerCanvas.setActiveObject(pastedImg);
@@ -305,12 +356,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.key === 'Backspace' && selectedCanvasObjectsForDelete.length > 0) {
       selectedCanvasObjectsForDelete.forEach((obj) => {
         if (obj.type === 'image') {
+          diagramsMakerCanvas.remove(obj);
+
           if (obj.linkedText) {
             diagramsMakerCanvas.remove(obj.linkedText);
           }
         }
 
-        diagramsMakerCanvas.remove(obj);
         diagramsMakerCanvas.discardActiveObject();
         diagramsMakerCanvas.renderAll();
       });
@@ -334,17 +386,18 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(`
       TODO: 
       Funcionalidades a implementar:
-      *Exportación tiene que capturar todos los elementos incluso los que no se ven en el canvasContainer. (Pulir)
-      *Control Z 
-      *Control Y 
+      *Exportación tiene que capturar todos los elementos incluso los que no se ven en el canvasContainer. (Pulir bugs del zoom (Opcional))
+      *Control Z: Agregarle el saveCanvasState a los elementos gráficos y coregir el bug de atributos por el loadToJson.
+      *Control Y: Agregarle el saveCanvasState a los elementos gráficos y coregir el bug de atributos por el loadToJson.
       *Cuando se pegan más de un elemento cortado o pegado, corregir sus posiciones y todos deben de estar seleccionados.
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
-      *Ponerles sus imágenes a botones de ajuste de texto.
-      *Pasar elemento hacia en frente o hacia atrás.
+      *Pasar bien los elementos hacia en frente o hacia atrás, falta lo del texto.
 
       *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
 
       Bugs
+      *Flecha de dependencia, al girar debe girarse el texto bien, y si no se puede, poder mover el texto con libertad.
+      *Copiar y pegar elemento no genera elemento con el mismo tamaño.
 
       *Ctrl + Z: Revertir cambios (WIP).
       *Ctrl + Y: Recuperar elementos de la reversión de cambios (WIP).
@@ -387,12 +440,25 @@ document.addEventListener('DOMContentLoaded', () => {
         obj.setCoords(); // Update object coordinates
       });
 
+      const background = new fabric.Rect({
+        left: 0,
+        top: 0,
+        width: newWidth,
+        height: newHeight,
+        fill: '#ffffff', // Background color
+        selectable: false,
+        evented: false,
+      });
+      diagramsMakerCanvas.add(background);
+      diagramsMakerCanvas.sendToBack(background);
       diagramsMakerCanvas.renderAll();
 
       const dataURL = diagramsMakerCanvas.toDataURL({
         format: 'png',
-        quality: 1.0
+        quality: 5.0
       });
+
+      diagramsMakerCanvas.remove(background);
 
       diagramsMakerCanvas.setDimensions({ width: originalWidth, height: originalHeight });
       objects.forEach((obj) => {
@@ -405,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const link = document.createElement('a');
       link.href = dataURL;
-      link.download = 'canvas.png';
+      link.download = 'Diagramming Canvas.png';
       link.click();
     } else {
       alert('No se puede exportar un diagrama vacío.');
@@ -426,50 +492,56 @@ document.addEventListener('DOMContentLoaded', () => {
     diagramsMakerCanvas.renderAll();
   });
 
-  selectedElementTextInput.addEventListener('input', (event) => {
+  selectedElementTextInput.addEventListener('input', () => {
     selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = selectedElementTextInput.value;
     updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
     diagramsMakerCanvas.renderAll();
   });
 
-
-  //TAKE REFERENCE
   setElementsInFrontOfButton.addEventListener('click', () => {
-    const activeObjects = diagramsMakerCanvas.getActiveObjects();
-    activeObjects.forEach((object) => {
-      applyToElementAndLinkedText('bringForward', object);
-    });
-    diagramsMakerCanvas.renderAll();
+    const selectedObjectLinkedText = selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText;
+    const objectForComparision = diagramsMakerCanvas.getObjects()[selectedObjectLinkedText + 2];
 
-    diagramsMakerCanvas[action](object);
-
-    // If the object has linkedText, apply the same action to the linkedText
-    if (object.linkedText) {
-      diagramsMakerCanvas[action](object.linkedText);
+    if (diagramsMakerCanvas.getObjects().indexOf(objectForComparision).type !== 'text') {
+      console.log('pene');
+      diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+      diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
     }
+
+    if (diagramsMakerCanvas.getObjects().indexOf(selectedObjectLinkedText) + 2 > diagramsMakerCanvas.getObjects().length) {
+      console.log('de bebe');
+      diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
+      diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+
+    }
+
+
+    //diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
+    //diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
+    //diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+    //diagramsMakerCanvas.bringForward(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+
+
+    diagramsMakerCanvas.renderAll();
   });
 
   setElementsBehindButton.addEventListener('click', () => {
-    const activeObjects = diagramsMakerCanvas.getActiveObjects();
-    activeObjects.forEach((object) => {
-      applyToElementAndLinkedText('sendBackwards', object);
-    });
+    diagramsMakerCanvas.sendBackwards(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+    diagramsMakerCanvas.sendBackwards(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+    diagramsMakerCanvas.sendBackwards(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
+    diagramsMakerCanvas.sendBackwards(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
     diagramsMakerCanvas.renderAll();
   });
 
   setElementsInFrontButton.addEventListener('click', () => {
-    const activeObjects = diagramsMakerCanvas.getActiveObjects();
-    activeObjects.forEach((object) => {
-      applyToElementAndLinkedText('bringToFront', object);
-    });
+    diagramsMakerCanvas.bringToFront(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+    diagramsMakerCanvas.bringToFront(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
     diagramsMakerCanvas.renderAll();
   });
 
   setElementsAtTheBottomButton.addEventListener('click', () => {
-    const activeObjects = diagramsMakerCanvas.getActiveObjects();
-    activeObjects.forEach((object) => {
-      applyToElementAndLinkedText('sendToBack', object);
-    });
+    diagramsMakerCanvas.sendToBack(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
+    diagramsMakerCanvas.sendToBack(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
     diagramsMakerCanvas.renderAll();
   });
 
@@ -507,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  textFontSizeInput.addEventListener('input', (event) => {
+  textFontSizeInput.addEventListener('input', () => {
     if (textFontSizeInput.value < 8) {
       textFontSizeInput.value = 8;
     }
@@ -685,9 +757,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function saveCanvasState() {
-    console.log(canvasHistory);
-    console.log(canvasHistory.length);
-
     canvasHistory.push(diagramsMakerCanvas.toJSON());
   }
 
@@ -702,8 +771,6 @@ document.addEventListener('DOMContentLoaded', () => {
       canvasElement.linkedText.left = canvasElement.left + canvasElement.getScaledWidth() / 2 - canvasElement.linkedText.width / 2;
       canvasElement.linkedText.top = canvasElement.top - canvasElement.linkedText.height + 10;
     }
-
-    canvasElement.linkedText.bringToFront();
   }
 
   function zoomCanvas(factor) {

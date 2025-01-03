@@ -131,6 +131,9 @@ body #diagramming-content #diagrams-elements-editor-div #selected-image-div #tex
   gap: 5px;
 }
 body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 2rem;
   height: 2rem;
   border: 1px solid #CCCCCC;
@@ -141,17 +144,9 @@ body #diagramming-content #diagrams-elements-editor-div #selected-image-div #tex
 body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div button:hover {
   background-color: #EEEEEE;
 }
-body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div #text-align-left-button {
-  background-image: url("assets/images/text_alignment_buttons_icons/start_alignment.png");
-}
-body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div #text-align-center-button {
-  background-image: url("assets/images/text_alignment_buttons_icons/center_alignment.png");
-}
-body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div #text-align-right-button {
-  background-image: url("assets/images/text_alignment_buttons_icons/end_alignment.png");
-}
-body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div #text-align-justify-button {
-  background-image: url("assets/images/text_alignment_buttons_icons/justified_alignment.png");
+body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div img {
+  width: 22px;
+  height: 22px;
 }
 body #diagramming-content #diagrams-elements-editor-div #selected-image-div #text-modifiers-div #text-font-size-input {
   padding: 0.25rem;

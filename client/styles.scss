@@ -146,6 +146,9 @@ body {
                     gap: 5px;
 
                     button {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
                         width: 2rem;
                         height: 2rem;
                         border: 1px solid #CCCCCC;
@@ -158,20 +161,9 @@ body {
                         }
                     }
 
-                    #text-align-left-button {
-                        background-image: url('assets/images/text_alignment_buttons_icons/start_alignment.png');
-                    }
-
-                    #text-align-center-button {
-                        background-image: url('assets/images/text_alignment_buttons_icons/center_alignment.png');
-                    }
-
-                    #text-align-right-button {
-                        background-image: url('assets/images/text_alignment_buttons_icons/end_alignment.png');
-                    }
-
-                    #text-align-justify-button {
-                        background-image: url('assets/images/text_alignment_buttons_icons/justified_alignment.png');
+                    img {
+                        width: 22px;
+                        height: 22px;
                     }
 
                     #text-font-size-input {
