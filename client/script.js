@@ -116,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
         textBox = new fabric.Textbox('Texto');
 
         setCanvasDiagramElementTextBoxAttributes(textBox);
-        img.linkedText = textBox;
 
         if (includeAndExtendsTextImages.includes(img.imageUrl)) {
           textBox.set({
@@ -125,28 +124,34 @@ document.addEventListener('DOMContentLoaded', () => {
             event: true,
             hasControls: true,
             hasBorders: true,
-            selectable: true,
-            hasRotatingPoint: false,
-            lockRotation: true
+            selectable: true
           });
 
           textBox.setControlsVisibility({
-            mtr: false
+            mtr: false,
+            mt: false,
+            mb: false,
+            ml: false,
+            mr: false,
+            bl: true,
+            br: true,
+            tl: true,
+            tr: true
           });
         }
 
+        img.linkedText = textBox;
+        setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
+        diagramsMakerCanvas.add(img);
+
+        if (img.linkedText) {
+          diagramsMakerCanvas.add(textBox);
+          img.linkedText.bringForward();
+        }
+
+        diagramsMakerCanvas.setActiveObject(img);
+        diagramsMakerCanvas.renderAll();
       }
-
-      setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
-      diagramsMakerCanvas.add(img);
-
-      if (img.linkedText) {
-        diagramsMakerCanvas.add(textBox);
-        img.linkedText.bringForward();
-      }
-
-      diagramsMakerCanvas.setActiveObject(img);
-      diagramsMakerCanvas.renderAll();
     });
   });
 
@@ -184,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   diagramsMakerCanvas.on('object:added', (event) => {
     const addedObject = event.target;
-    handleCanvasObjectEvent(event);
+    updateLinkedTextPositionForCanvasElement(addedObject);
     saveCanvasState();
 
     if (addedObject.type === 'textbox') {
@@ -374,7 +379,6 @@ document.addEventListener('DOMContentLoaded', () => {
       *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
 
       Bugs
-      *Flecha de dependencia, al girar debe girarse el texto bien, y si no se puede, poder mover el texto con libertad.
       *Copiar y pegar elemento no genera elemento con el mismo tamaño.
 
       *Ctrl + Z: Revertir cambios (WIP).
@@ -463,14 +467,12 @@ document.addEventListener('DOMContentLoaded', () => {
   includeInput.addEventListener('click', () => {
     extendsInput.checked = false;
     selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = "<<include>>";
-    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
     diagramsMakerCanvas.renderAll();
   });
 
   extendsInput.addEventListener('click', () => {
     includeInput.checked = false;
     selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = "<<extends>>";
-    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
     diagramsMakerCanvas.renderAll();
   });
 
@@ -610,11 +612,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (selectedElements.type === 'activeSelection') {
       selectedElements._objects.forEach((obj) => {
-        if (obj.linkedText) {
+        if (obj.linkedText && !includeAndExtendsTextImages.includes(obj.imageUrl)) {
           updateLinkedTextPositionForCanvasElement(obj);
         }
       });
-    } else if (selectedElements.linkedText) {
+    } else if (selectedElements.linkedText && !includeAndExtendsTextImages.includes(selectedElements.imageUrl)) {
       updateLinkedTextPositionForCanvasElement(selectedElements);
     }
 
@@ -705,12 +707,14 @@ document.addEventListener('DOMContentLoaded', () => {
           height: img.getScaledHeight()
         });
 
-        updateLinkedTextPositionForCanvasElement(img);
+        if (!includeAndExtendsTextImages.includes(img.imageUrl)) {
+          updateLinkedTextPositionForCanvasElement(img);
+        }
       }
     })
 
     img.on('rotating', () => {
-      if (img.linkedText) {
+      if (img.linkedText && !includeAndExtendsTextImages.includes(img.imageUrl)) {
         updateLinkedTextPositionForCanvasElement(img);
       }
     });
@@ -723,7 +727,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      if (img.linkedText) {
+      if (img.linkedText && !includeAndExtendsTextImages.includes(img.imageUrl)) {
         selectedElementTextInput.value = img.linkedText.text;
         textFontSizeInput.value = img.linkedText.fontSize;
         updateLinkedTextPositionForCanvasElement(img);
