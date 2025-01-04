@@ -141,17 +141,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         img.linkedText = textBox;
-        setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
-        diagramsMakerCanvas.add(img);
 
-        if (img.linkedText) {
-          diagramsMakerCanvas.add(textBox);
-          img.linkedText.bringForward();
-        }
-
-        diagramsMakerCanvas.setActiveObject(img);
-        diagramsMakerCanvas.renderAll();
       }
+      
+      setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
+
+      diagramsMakerCanvas.add(img);
+
+      if (img.linkedText) {
+        diagramsMakerCanvas.add(textBox);
+        img.linkedText.bringForward();
+      }
+
+      diagramsMakerCanvas.setActiveObject(img);
+      diagramsMakerCanvas.renderAll();
     });
   });
 
