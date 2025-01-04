@@ -73,6 +73,7 @@ body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 10px;
 }
 body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer {
   display: flex;
@@ -80,7 +81,46 @@ body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div
   justify-content: center;
   gap: 10px;
 }
-body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer .diagram-element {
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #start-end-element-img,
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #input-output-element-img,
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #document-element-img,
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #use-case-element-img,
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #system-element-img {
+  display: block;
+  width: 100px;
+  height: 60px;
+  cursor: grab;
+}
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #decision-element-img,
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #on-page-reference-element-img,
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #off-page-reference-element-img {
+  display: block;
+  width: 70px;
+  height: 70px;
+  cursor: grab;
+}
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #process-element-img {
+  display: block;
+  width: 100px;
+  height: 50px;
+  cursor: grab;
+}
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #use-case-element-img {
+  display: block;
+  width: 100px;
+  height: 50px;
+  cursor: grab;
+}
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #actor-element-img {
+  display: block;
+  width: 50px;
+  height: 80px;
+  cursor: grab;
+}
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #flow-element-img,
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #asociation-element-img,
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #dependency-element-img,
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #generalization-element-img {
   display: block;
   width: 100px;
   height: 75px;

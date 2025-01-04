@@ -375,6 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
       *Control Y: Agregarle el saveCanvasState a los elementos gráficos y coregir el bug de atributos por el loadToJson.
       *Cuando se pegan más de un elemento cortado o pegado, corregir sus posiciones y todos deben de estar seleccionados. (Funcionalidad para la Versión 1.1)
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
+      *Cuando muchos elementos estan seleccionados, el cuadro que los rodea debe impedir cambiar la escala o rotarlos (Muy Dificil).
 
       *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
 
@@ -382,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
       *Copiar y pegar elemento no genera elemento con el mismo tamaño.
 
       *Ctrl + Z: Revertir cambios (WIP).
-      *Ctrl + Y: Recuperar elementos de la reversión de cambios (WIP).
+      *Ctrl + Y: Recuperar elementos de la reversión de cambios (WIP). 
       *Ctrl + C: Copiar elementos seleccionados (WIP).
       *Ctrl + X: Cortar elementos seleccionados (WIP).
       *Ctrl + V: Pegar elementos copiados (WIP).
@@ -613,6 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectedElements.type === 'activeSelection') {
       selectedElements._objects.forEach((obj) => {
         if (obj.linkedText && !includeAndExtendsTextImages.includes(obj.imageUrl)) {
+          console.log("polla");
           updateLinkedTextPositionForCanvasElement(obj);
         }
       });
@@ -720,6 +722,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     img.on('selected', () => {
+      const activeObjects = diagramsMakerCanvas.getActiveObjects();
+
+
       if (selectedCanvasObjectsForEdit.includes(img)) {
         const index = selectedCanvasObjectsForEdit.indexOf(img);
         if (index !== -1) {
@@ -730,13 +735,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (img.linkedText && !includeAndExtendsTextImages.includes(img.imageUrl)) {
         selectedElementTextInput.value = img.linkedText.text;
         textFontSizeInput.value = img.linkedText.fontSize;
-        updateLinkedTextPositionForCanvasElement(img);
+
+        if (activeObjects.length === 1) {
+          updateLinkedTextPositionForCanvasElement(img);
+        }
       }
 
       selectedCanvasObjectsForEdit.push(img);
       selectedCanvasObjectsForDelete.push(img);
 
-      if (diagramsMakerCanvas.getActiveObjects().length > 1) {
+      if (activeObjects.length > 1) {
         nonSelectedImageDiv.style.display = 'block';
         selectedImageDiv.style.display = 'none';
         return;
@@ -786,16 +794,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateLinkedTextPositionForCanvasElement(canvasElement) {
+    if (!canvasElement.linkedText) return;
+
     if (centeredImages.includes(canvasElement.imageUrl)) {
       canvasElement.linkedText.left = canvasElement.left + canvasElement.getScaledWidth() / 2 - canvasElement.linkedText.width / 2;
       canvasElement.linkedText.top = canvasElement.top + canvasElement.getScaledHeight() / 2 - canvasElement.linkedText.height / 2;
     } else if (belowImages.includes(canvasElement.imageUrl)) {
       canvasElement.linkedText.left = canvasElement.left + canvasElement.getScaledWidth() / 2 - canvasElement.linkedText.width / 2;
-      canvasElement.linkedText.top = canvasElement.top + canvasElement.getScaledHeight() + 10;
+      canvasElement.linkedText.top = canvasElement.top + canvasElement.getScaledHeight();
     } else if (aboveImages.includes(canvasElement.imageUrl)) {
       canvasElement.linkedText.left = canvasElement.left + canvasElement.getScaledWidth() / 2 - canvasElement.linkedText.width / 2;
-      canvasElement.linkedText.top = canvasElement.top - canvasElement.linkedText.height + 10;
+      canvasElement.linkedText.top = canvasElement.top - canvasElement.linkedText.height;
     }
+
+    canvasElement.linkedText.setCoords();
   }
 
   function zoomCanvas(factor) {
