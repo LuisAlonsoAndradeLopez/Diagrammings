@@ -10,6 +10,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "fabric": "^6.5.3"
+    "@stomp/stompjs": "^7.0.0",
+    "fabric": "^6.5.3",
+    "sockjs-client": "^1.6.1"
+  },
+  "devDependencies": {
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
   }
 }

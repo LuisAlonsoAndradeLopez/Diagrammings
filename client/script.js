@@ -150,16 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  diagramsElementsEditorDiv.addEventListener('click', (event) => {
+  diagramsElementsEditorDiv.addEventListener('click', () => {
     diagramsMakerCanvas.discardActiveObject();
-  });
-
-  diagramsMakerCanvasHtmlElement.addEventListener('wheel', (event) => {
-    event.preventDefault();
-    const delta = event.deltaY > 0 ? 0.9 : 1.1;
-
-    diagramsMakerCanvas.zoomToPoint(new fabric.Point(mousePointer.x, mousePointer.y), canvasZoomLevel * delta);
-    canvasZoomLevel = diagramsMakerCanvas.getZoom();
   });
 
   diagramsMakerCanvas.on('mouse:down', (event) => {
@@ -374,10 +366,9 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(`
       TODO: 
       Funcionalidades a implementar:
-      *Exportación tiene que capturar todos los elementos incluso los que no se ven en el canvasContainer. (Pulir bugs del zoom (Opcional))
       *Control Z: Agregarle el saveCanvasState a los elementos gráficos y coregir el bug de atributos por el loadToJson.
       *Control Y: Agregarle el saveCanvasState a los elementos gráficos y coregir el bug de atributos por el loadToJson.
-      *Cuando se pegan más de un elemento cortado o pegado, corregir sus posiciones y todos deben de estar seleccionados.
+      *Cuando se pegan más de un elemento cortado o pegado, corregir sus posiciones y todos deben de estar seleccionados. (Funcionalidad para la Versión 1.1)
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
 
       *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
@@ -402,6 +393,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (diagramsMakerCanvas.getObjects().length > 0) {
       const originalWidth = diagramsMakerCanvas.getWidth();
       const originalHeight = diagramsMakerCanvas.getHeight();
+      const originalZoom = diagramsMakerCanvas.getZoom();
+
+      diagramsMakerCanvas.setZoom(1);
 
       const objects = diagramsMakerCanvas.getObjects();
       const bounds = objects.reduce(
@@ -441,13 +435,14 @@ document.addEventListener('DOMContentLoaded', () => {
       diagramsMakerCanvas.renderAll();
 
       const dataURL = diagramsMakerCanvas.toDataURL({
-        format: 'png',
-        quality: 5.0
+        format: 'png'
       });
 
       diagramsMakerCanvas.remove(background);
 
       diagramsMakerCanvas.setDimensions({ width: originalWidth, height: originalHeight });
+      diagramsMakerCanvas.setZoom(originalZoom);
+
       objects.forEach((obj) => {
         obj.left += bounds.minX;
         obj.top += bounds.minY;
