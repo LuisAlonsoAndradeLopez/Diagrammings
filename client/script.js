@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         img.linkedText = textBox;
 
       }
-      
+
       setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
 
       diagramsMakerCanvas.add(img);
@@ -239,9 +239,71 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentState = canvasHistory.pop();
         canvasHistoryRedo.push(currentState);
 
-        diagramsMakerCanvas.loadFromJSON(canvasHistory[canvasHistory.length - 1], () => {
-          diagramsMakerCanvas.renderAll();
+        const jsonObjects = canvasHistory[canvasHistory.length - 1].objects;
+        diagramsMakerCanvas.clear();
+
+        jsonObjects.forEach((obj, index) => {
+          if (obj.type === 'image') {
+            fabric.Image.fromURL(obj.src, (img) => {
+              img.set({
+                imageUrl: obj.src.split('/').pop()
+              });
+
+              let imgLinkedTextBox;
+
+              setCanvasDiagramElementAttributes(img);
+
+              img.set({
+                left: obj.left,
+                top: obj.top
+              });
+
+              if (jsonObjects[index + 1].type === 'textbox') {
+                imgLinkedTextBox = new fabric.Textbox(jsonObjects[index + 1].text);
+                setCanvasDiagramElementTextBoxAttributes(imgLinkedTextBox);
+
+                if (includeAndExtendsTextImages.includes(img.imageUrl)) {
+                  textBox.set({
+                    text: '<<include>>',
+                    editable: true,
+                    evented: true,
+                    hasControls: true,
+                    hasBorders: true,
+                    selectable: true,
+                  });
+
+                  textBox.setControlsVisibility({
+                    mtr: false,
+                    mt: false,
+                    mb: false,
+                    ml: false,
+                    mr: false,
+                    bl: true,
+                    br: true,
+                    tl: true,
+                    tr: true,
+                  });
+                }
+
+                img.linkedText = imgLinkedTextBox;
+
+              }
+
+              setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
+              diagramsMakerCanvas.add(img);
+
+              if (img.linkedText) {
+                diagramsMakerCanvas.add(imgLinkedTextBox);
+                img.linkedText.bringForward();
+              }
+
+              diagramsMakerCanvas.renderAll();
+
+            });
+          }
         });
+
+        diagramsMakerCanvas.renderAll();
       }
     }
 
