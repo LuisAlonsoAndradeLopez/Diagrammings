@@ -104,17 +104,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     fabric.Image.fromURL(imageUrl, (img) => {
-      img.set({
-        imageUrl: imageUrl.split('/').pop()
-      });
-
       let textBox;
+      img.imageUrl = imageUrl.split('/').pop();
 
       setCanvasDiagramElementAttributes(img);
 
+      img.set({
+        left: mousePointer.x - img.getScaledWidth() / 2,
+        top: mousePointer.y - img.getScaledHeight() / 2
+      });
+
       if (!notTextImages.includes(img.imageUrl)) {
         textBox = new fabric.Textbox('Texto');
-
         setCanvasDiagramElementTextBoxAttributes(textBox);
 
         if (includeAndExtendsTextImages.includes(img.imageUrl)) {
@@ -145,7 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
-
       diagramsMakerCanvas.add(img);
 
       if (img.linkedText) {
@@ -155,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       diagramsMakerCanvas.setActiveObject(img);
       diagramsMakerCanvas.renderAll();
+      saveCanvasState();
     });
   });
 
@@ -193,22 +194,6 @@ document.addEventListener('DOMContentLoaded', () => {
   diagramsMakerCanvas.on('object:added', (event) => {
     const addedObject = event.target;
     updateLinkedTextPositionForCanvasElement(addedObject);
-    saveCanvasState();
-
-    if (addedObject.type === 'textbox') {
-      canvasHistory.splice(canvasHistory.length - 2, 1);
-    }
-  });
-
-  //For understand this function behavior and if you want to modify, you should understand the document.addEventListener(keydown) if (event.key === 'Backspace' && selectedCanvasObjectsForDelete.length > 0) {} behavior.
-  diagramsMakerCanvas.on('object:removed', (event) => {
-    const removedObject = event.target;
-    diagramsMakerCanvas.renderAll();
-    saveCanvasState();
-
-    if (removedObject.type === 'textbox') {
-      canvasHistory.splice(canvasHistory.length - 2, 1);
-    }
   });
 
   diagramsMakerCanvas.on('object:moving', (event) => {
@@ -235,74 +220,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', (event) => {
     if (event.ctrlKey && event.key === 'z') {
       event.preventDefault();
-      if (canvasHistory.length > 0) {
+      if (canvasHistory.length > 1) {
         const currentState = canvasHistory.pop();
         canvasHistoryRedo.push(currentState);
 
         const jsonObjects = canvasHistory[canvasHistory.length - 1].objects;
         diagramsMakerCanvas.clear();
-
-        jsonObjects.forEach((obj, index) => {
-          if (obj.type === 'image') {
-            fabric.Image.fromURL(obj.src, (img) => {
-              img.set({
-                imageUrl: obj.src.split('/').pop()
-              });
-
-              let imgLinkedTextBox;
-
-              setCanvasDiagramElementAttributes(img);
-
-              img.set({
-                left: obj.left,
-                top: obj.top
-              });
-
-              if (jsonObjects[index + 1].type === 'textbox') {
-                imgLinkedTextBox = new fabric.Textbox(jsonObjects[index + 1].text);
-                setCanvasDiagramElementTextBoxAttributes(imgLinkedTextBox);
-
-                if (includeAndExtendsTextImages.includes(img.imageUrl)) {
-                  textBox.set({
-                    text: '<<include>>',
-                    editable: true,
-                    evented: true,
-                    hasControls: true,
-                    hasBorders: true,
-                    selectable: true,
-                  });
-
-                  textBox.setControlsVisibility({
-                    mtr: false,
-                    mt: false,
-                    mb: false,
-                    ml: false,
-                    mr: false,
-                    bl: true,
-                    br: true,
-                    tl: true,
-                    tr: true,
-                  });
-                }
-
-                img.linkedText = imgLinkedTextBox;
-
-              }
-
-              setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
-              diagramsMakerCanvas.add(img);
-
-              if (img.linkedText) {
-                diagramsMakerCanvas.add(imgLinkedTextBox);
-                img.linkedText.bringForward();
-              }
-
-              diagramsMakerCanvas.renderAll();
-
-            });
-          }
-        });
-
+        console.log(jsonObjects);
+        generateCanvasElementsFromCanvasState(jsonObjects);
         diagramsMakerCanvas.renderAll();
       }
     }
@@ -310,12 +235,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.ctrlKey && event.key === 'y') {
       event.preventDefault();
       if (canvasHistoryRedo.length > 0) {
+        const jsonObjects = canvasHistoryRedo[canvasHistoryRedo.length - 1].objects;
         const nextState = canvasHistoryRedo.pop();
-        canvasHistory.push(diagramsMakerCanvas.toJSON());
+        canvasHistory.push(nextState);
 
-        diagramsMakerCanvas.loadFromJSON(nextState, () => {
-          diagramsMakerCanvas.renderAll();
-        });
+        diagramsMakerCanvas.clear();
+        generateCanvasElementsFromCanvasState(jsonObjects);
+        diagramsMakerCanvas.renderAll();
       }
     }
 
@@ -376,11 +302,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const clonedObjImageUrl = copiedObj.objectImageUrl;
 
         clonedObj.clone((pastedImg) => {
-          pastedImg.set({
-            imageUrl: clonedObjImageUrl
-          });
-
           setCanvasDiagramElementAttributes(pastedImg);
+
+          pastedImg.set({
+            left: clonedObj.left + 10,
+            top: clonedObj.top + 10,
+            width: clonedObj.width,
+            height: clonedObj.height,
+            imageUrl: clonedObjImageUrl
+          });          
+
+          pastedImg.scaleToWidth(clonedObj.width * clonedObj.scaleX);
+          pastedImg.scaleToHeight(clonedObj.height * clonedObj.scaleY);
+
+          console.log(clonedObj.width * clonedObj.scaleX);
 
           if (copiedObj.text) {
             copiedObj.text.clone((pastedTextBox) => {
@@ -418,6 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       diagramsMakerCanvas.renderAll();
+      saveCanvasState();
 
       nonSelectedImageDiv.style.display = 'block';
       selectedImageDiv.style.display = 'none';
@@ -436,16 +372,18 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(`
       TODO: 
       Funcionalidades a implementar:
-      *Control Z: Agregarle el saveCanvasState a los elementos gráficos y coregir el bug de atributos por el loadToJson.
-      *Control Y: Agregarle el saveCanvasState a los elementos gráficos y coregir el bug de atributos por el loadToJson.
-      *Cuando se pegan más de un elemento cortado o pegado, corregir sus posiciones y todos deben de estar seleccionados. (Funcionalidad para la Versión 1.1)
+      *Control Z: Agregarle el saveCanvasState a los elementos gráficos y coregir el bug de atributos por el loadToJson (Bugs, descartar o dejarlos para la versión 1.1).
+      *Control Y: Agregarle el saveCanvasState a los elementos gráficos y coregir el bug de atributos por el loadToJson (Bugs, descartar o dejarlos para la versión 1.1).
+      *Copiar, cortar y pegar más de un elemento seleccionado, arreglando sus posiciones.
+      *Copiar y pegar elemento no genera elemento con el mismo tamaño.
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
       *Cuando muchos elementos estan seleccionados, el cuadro que los rodea debe impedir cambiar la escala o rotarlos (Muy Dificil).
 
       *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
 
-      Bugs
-      *Copiar y pegar elemento no genera elemento con el mismo tamaño.
+
+      Funcionalidades para la versión 1.1:
+      *Ctrl + Z para los componentes gráficos para edición.
 
       *Ctrl + Z: Revertir cambios (WIP).
       *Ctrl + Y: Recuperar elementos de la reversión de cambios (WIP). 
@@ -673,13 +611,82 @@ document.addEventListener('DOMContentLoaded', () => {
     diagramsMakerCanvas.renderAll();
   });
 
+  function generateCanvasElementsFromCanvasState(jsonObjects) {
+    jsonObjects.forEach((obj, index) => {
+      if (obj.type === 'image') {
+        fabric.Image.fromURL(obj.src, (img) => {
+          img.set({
+            imageUrl: obj.src.split('/').pop()
+          });
+
+          let imgLinkedTextBox;
+          setCanvasDiagramElementAttributes(img);
+
+          console.log("obj.width: " + obj.width);
+          console.log("obj.scaledwidth: " + obj.scaledWidth);
+
+          img.set({
+            left: obj.left,
+            top: obj.top,
+            width: obj.width,
+            height: obj.height
+          });
+
+          img.scaleToWidth(obj.width * obj.scaleX);
+          img.scaleToHeight(obj.height * obj.scaleY);
+
+          if (jsonObjects[index + 1] && jsonObjects[index + 1].type === 'textbox') {
+            imgLinkedTextBox = new fabric.Textbox(jsonObjects[index + 1].text);
+            setCanvasDiagramElementTextBoxAttributes(imgLinkedTextBox);
+
+            if (includeAndExtendsTextImages.includes(img.imageUrl)) {
+              textBox.set({
+                text: '<<include>>',
+                editable: true,
+                evented: true,
+                hasControls: true,
+                hasBorders: true,
+                selectable: true,
+              });
+
+              textBox.setControlsVisibility({
+                mtr: false,
+                mt: false,
+                mb: false,
+                ml: false,
+                mr: false,
+                bl: true,
+                br: true,
+                tl: true,
+                tr: true,
+              });
+            }
+
+            img.linkedText = imgLinkedTextBox;
+
+          }
+
+          setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
+          diagramsMakerCanvas.add(img);
+
+          if (img.linkedText) {
+            diagramsMakerCanvas.add(imgLinkedTextBox);
+            img.linkedText.bringForward();
+          }
+
+          diagramsMakerCanvas.renderAll();
+
+        });
+      }
+    });
+  }
+
   function handleCanvasObjectEvent(event, shouldRender = false) {
     const selectedElements = event.target;
 
     if (selectedElements.type === 'activeSelection') {
       selectedElements._objects.forEach((obj) => {
         if (obj.linkedText && !includeAndExtendsTextImages.includes(obj.imageUrl)) {
-          console.log("polla");
           updateLinkedTextPositionForCanvasElement(obj);
         }
       });
@@ -696,14 +703,12 @@ document.addEventListener('DOMContentLoaded', () => {
     img.scaleToWidth(100);
     img.scaleToHeight(75);
 
-    img.set({
-      left: mousePointer.x - img.getScaledWidth() / 2,
-      top: mousePointer.y - img.getScaledHeight() / 2,
-      selectable: true,
-      fill: 'black'
-    });
-
     if (notRotatingImages.includes(img.imageUrl)) {
+      img.set({
+        selectable: true,
+        fill: 'black'
+      });
+
       img.set({
         hasRotatingPoint: false,
         lockRotation: true
