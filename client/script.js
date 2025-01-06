@@ -225,6 +225,9 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedCanvasObjectsForDelete = [];
   });
 
+  diagramsMakerCanvas.on('selection:created', lockSelectionControls);
+  diagramsMakerCanvas.on('selection:updated', lockSelectionControls);
+
   document.addEventListener('keydown', (event) => {
     if (event.ctrlKey && event.key === 'z') {
       event.preventDefault();
@@ -437,19 +440,17 @@ document.addEventListener('DOMContentLoaded', () => {
       TODO: 
       Funcionalidades a implementar:
       *Probar todos los control mas tal, ajsutanto tamaños de elementos y textos a muerte, para encontrar bugs.
+      *Problemas con copiar y pegar elementos de diferente tamaño y con control + z y control + y.
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
-      *Cuando muchos elementos estan seleccionados, el cuadro que los rodea debe impedir cambiar la escala o rotarlos (Muy Dificil).
-
-      *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
 
       Funcionalidades para la versión 1.1:
       *Ctrl + Z para los componentes gráficos para edición.
 
-      *Ctrl + Z: Revertir cambios (WIP).
-      *Ctrl + Y: Recuperar elementos de la reversión de cambios (WIP). 
-      *Ctrl + C: Copiar elementos seleccionados (WIP).
-      *Ctrl + X: Cortar elementos seleccionados (WIP).
-      *Ctrl + V: Pegar elementos copiados (WIP).
+      *Ctrl + Z: Revertir cambios.
+      *Ctrl + Y: Recuperar elementos de la reversión de cambios. 
+      *Ctrl + C: Copiar elementos seleccionados.
+      *Ctrl + X: Cortar elementos seleccionados.
+      *Ctrl + V: Pegar elementos copiados.
       *Backspace: Eliminar elementos seleccionados.
       *+: Agrandar el zoom del canvas.
       *-: Minimizar el zoom del canvas.
@@ -752,6 +753,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (shouldRender) {
+      diagramsMakerCanvas.renderAll();
+    }
+  }
+
+  function lockSelectionControls() {
+    const activeObject = diagramsMakerCanvas.getActiveObject();
+
+    if (activeObject && activeObject.type === 'activeSelection') {
+      activeObject.set({
+        hasControls: false, // No rotation/scaling controls
+        lockScalingX: true,
+        lockScalingY: true,
+        lockRotation: true,
+      });
+
+      activeObject.getObjects().forEach((obj) => {
+        obj.set({
+          lockMovementX: false,
+          lockMovementY: false,
+          selectable: true,
+          evented: true,
+        });
+      });
+
       diagramsMakerCanvas.renderAll();
     }
   }
