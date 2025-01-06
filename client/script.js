@@ -109,10 +109,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
       setCanvasDiagramElementAttributes(img);
 
+      const fineScaleX = Math.round(img.scaleX * 100) / 100;
+      const fineScaleY = Math.round(img.scaleY * 100) / 100;
+
       img.set({
         left: mousePointer.x - img.getScaledWidth() / 2,
-        top: mousePointer.y - img.getScaledHeight() / 2
+        top: mousePointer.y - img.getScaledHeight() / 2,
+        scaleX: fineScaleX,
+        scaleY: fineScaleY
       });
+
+      img.scaleToWidth(img.width * img.scaleX);
+      img.scaleToHeight(img.height * img.scaleY);
 
       if (!notTextImages.includes(img.imageUrl)) {
         textBox = new fabric.Textbox('Texto');
@@ -252,6 +260,17 @@ document.addEventListener('DOMContentLoaded', () => {
         img.clone((clonedImg) => {
           setCanvasDiagramElementAttributes(clonedImg);
 
+          const fineScaleX = Math.round(img.scaleX * 100) / 100;
+          const fineScaleY = Math.round(img.scaleY * 100) / 100;
+
+          clonedImg.set({
+            scaleX: fineScaleX,
+            scaleY: fineScaleY
+          });
+
+          clonedImg.scaleToWidth(clonedImg.width * clonedImg.scaleX);
+          clonedImg.scaleToHeight(clonedImg.height * clonedImg.scaleY);
+
           if (img.linkedText) {
             img.linkedText.clone((clonedTextBox) => {
               setCanvasDiagramElementTextBoxAttributes(clonedTextBox);
@@ -273,6 +292,17 @@ document.addEventListener('DOMContentLoaded', () => {
       diagramsMakerCanvas.getActiveObjects().forEach((img) => {
         img.clone((clonedImg) => {
           setCanvasDiagramElementAttributes(clonedImg);
+
+          const fineScaleX = Math.round(img.scaleX * 100) / 100;
+          const fineScaleY = Math.round(img.scaleY * 100) / 100;
+
+          clonedImg.set({
+            scaleX: fineScaleX,
+            scaleY: fineScaleY
+          });
+
+          clonedImg.scaleToWidth(clonedImg.width * clonedImg.scaleX);
+          clonedImg.scaleToHeight(clonedImg.height * clonedImg.scaleY);
 
           if (img.linkedText) {
             img.linkedText.clone((clonedTextBox) => {
@@ -297,25 +327,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (event.ctrlKey && event.key === 'v' && copiedOrCutCanvasObjects.length > 0) {
-      copiedOrCutCanvasObjects.forEach((copiedObj) => {
+      const pastedObjects = [];
+
+      copiedOrCutCanvasObjects.forEach((copiedObj, index) => {
         const clonedObj = copiedObj.object;
         const clonedObjImageUrl = copiedObj.objectImageUrl;
 
         clonedObj.clone((pastedImg) => {
           setCanvasDiagramElementAttributes(pastedImg);
 
+          const fineScaleX = Math.round(pastedImg.scaleX * 100) / 100;
+          const fineScaleY = Math.round(pastedImg.scaleY * 100) / 100;
+
           pastedImg.set({
             left: clonedObj.left + 10,
             top: clonedObj.top + 10,
-            width: clonedObj.width,
-            height: clonedObj.height,
+            scaleX: fineScaleX,
+            scaleY: fineScaleY,
             imageUrl: clonedObjImageUrl
-          });          
+          });
 
-          pastedImg.scaleToWidth(clonedObj.width * clonedObj.scaleX);
-          pastedImg.scaleToHeight(clonedObj.height * clonedObj.scaleY);
-
-          console.log(clonedObj.width * clonedObj.scaleX);
+          pastedImg.scaleToWidth(pastedImg.width * pastedImg.scaleX);
+          pastedImg.scaleToHeight(pastedImg.height * pastedImg.scaleY);
 
           if (copiedObj.text) {
             copiedObj.text.clone((pastedTextBox) => {
@@ -332,8 +365,39 @@ document.addEventListener('DOMContentLoaded', () => {
             pastedImg.linkedText.bringForward();
           }
 
-          diagramsMakerCanvas.setActiveObject(pastedImg);
+          pastedObjects.push(pastedImg)
           diagramsMakerCanvas.renderAll();
+
+          if (index === copiedOrCutCanvasObjects.length - 1) {
+
+            // Wait for all elements to be added before grouping them
+            setTimeout(() => {
+              const selection = new fabric.ActiveSelection(pastedObjects, {
+                canvas: diagramsMakerCanvas,
+              });
+              diagramsMakerCanvas.setActiveObject(selection);
+              diagramsMakerCanvas.renderAll();
+
+              const boundingBox = selection.getBoundingRect();
+              const offsetX = mousePointer.x - (boundingBox.left + boundingBox.width / 2);
+              const offsetY = mousePointer.y - (boundingBox.top + boundingBox.height / 2);
+
+              pastedObjects.forEach((obj) => {
+                obj.left += offsetX;
+                obj.top += offsetY;
+                obj.setCoords();
+              });
+
+              diagramsMakerCanvas.discardActiveObject();
+              diagramsMakerCanvas.renderAll();
+
+              const finalSelection = new fabric.ActiveSelection(pastedObjects, {
+                canvas: diagramsMakerCanvas,
+              });
+              diagramsMakerCanvas.setActiveObject(finalSelection);
+              diagramsMakerCanvas.renderAll();
+            }, 0);
+          }
         });
       });
     }
@@ -372,15 +436,11 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(`
       TODO: 
       Funcionalidades a implementar:
-      *Control Z: Agregarle el saveCanvasState a los elementos gráficos y coregir el bug de atributos por el loadToJson (Bugs, descartar o dejarlos para la versión 1.1).
-      *Control Y: Agregarle el saveCanvasState a los elementos gráficos y coregir el bug de atributos por el loadToJson (Bugs, descartar o dejarlos para la versión 1.1).
-      *Copiar, cortar y pegar más de un elemento seleccionado, arreglando sus posiciones.
-      *Copiar y pegar elemento no genera elemento con el mismo tamaño.
+      *Probar todos los control mas tal, ajsutanto tamaños de elementos y textos a muerte, para encontrar bugs.
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
       *Cuando muchos elementos estan seleccionados, el cuadro que los rodea debe impedir cambiar la escala o rotarlos (Muy Dificil).
 
       *Escribir en el botón de ayuda los atajos de teclado. (Quitar los WIP cuando termines todo).
-
 
       Funcionalidades para la versión 1.1:
       *Ctrl + Z para los componentes gráficos para edición.
@@ -622,18 +682,15 @@ document.addEventListener('DOMContentLoaded', () => {
           let imgLinkedTextBox;
           setCanvasDiagramElementAttributes(img);
 
-          console.log("obj.width: " + obj.width);
-          console.log("obj.scaledwidth: " + obj.scaledWidth);
-
           img.set({
             left: obj.left,
             top: obj.top,
-            width: obj.width,
-            height: obj.height
+            scaleX: obj.scaleX,
+            scaleY: obj.scaleY
           });
 
-          img.scaleToWidth(obj.width * obj.scaleX);
-          img.scaleToHeight(obj.height * obj.scaleY);
+          img.scaleToWidth(img.width * img.scaleX);
+          img.scaleToHeight(img.height * img.scaleY);
 
           if (jsonObjects[index + 1] && jsonObjects[index + 1].type === 'textbox') {
             imgLinkedTextBox = new fabric.Textbox(jsonObjects[index + 1].text);
