@@ -261,30 +261,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
       diagramsMakerCanvas.getActiveObjects().forEach((img) => {
         img.clone((clonedImg) => {
+          clonedImg.imageUrl = img.imageUrl;
           setCanvasDiagramElementAttributes(clonedImg);
 
-          const fineScaleX = Math.round(img.scaleX * 100) / 100;
-          const fineScaleY = Math.round(img.scaleY * 100) / 100;
+          const fineScaleX = Number(img.scaleX.toFixed(2));
+          const fineScaleY = Number(img.scaleY.toFixed(2));
 
           clonedImg.set({
             scaleX: fineScaleX,
             scaleY: fineScaleY
           });
 
-          clonedImg.scaleToWidth(clonedImg.width * clonedImg.scaleX);
-          clonedImg.scaleToHeight(clonedImg.height * clonedImg.scaleY);
-
           if (img.linkedText) {
+            clonedImg.scaleToWidth(clonedImg.width * img.scaleX);
+            clonedImg.scaleToHeight(clonedImg.height * img.scaleX);
+
             img.linkedText.clone((clonedTextBox) => {
               setCanvasDiagramElementTextBoxAttributes(clonedTextBox);
               clonedImg.linkedText = clonedTextBox;
-              setCombinedCanvasDiagramElementAndTextBoxAttributes(clonedImg, clonedTextBox);
+              setCombinedCanvasDiagramElementAndTextBoxAttributes(clonedImg);
 
               copiedOrCutCanvasObjects.push({ object: clonedImg, objectImageUrl: img.imageUrl, text: clonedTextBox });
             });
           } else {
-            copiedOrCutCanvasObjects.push({ object: clonedImg, objectImageUrl: img.imageUrl });
+            console.log("Pene");
+            clonedImg.once('load', () => {
+              clonedImg.scaleToWidth(clonedImg.width * clonedImg.scaleX);
+              clonedImg.scaleToHeight(clonedImg.height * clonedImg.scaleY);
+              console.log(img.getScaledWidth());
+              console.log(clonedImg.getScaledWidth());
+
+              setCombinedCanvasDiagramElementAndTextBoxAttributes(clonedImg);
+              copiedOrCutCanvasObjects.push({ object: clonedImg, objectImageUrl: img.imageUrl });
+            });
           }
+
         });
       });
     }
@@ -294,20 +305,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       diagramsMakerCanvas.getActiveObjects().forEach((img) => {
         img.clone((clonedImg) => {
+          clonedImg.imageUrl = img.imageUrl;
           setCanvasDiagramElementAttributes(clonedImg);
 
-          const fineScaleX = Math.round(img.scaleX * 100) / 100;
-          const fineScaleY = Math.round(img.scaleY * 100) / 100;
+          const fineScaleX = Number(img.scaleX.toFixed(2));
+          const fineScaleY = Number(img.scaleY.toFixed(2));
 
           clonedImg.set({
             scaleX: fineScaleX,
             scaleY: fineScaleY
           });
 
-          clonedImg.scaleToWidth(clonedImg.width * clonedImg.scaleX);
-          clonedImg.scaleToHeight(clonedImg.height * clonedImg.scaleY);
-
           if (img.linkedText) {
+            clonedImg.scaleToWidth(clonedImg.width * img.scaleX);
+            clonedImg.scaleToHeight(clonedImg.height * img.scaleY);
+
             img.linkedText.clone((clonedTextBox) => {
               setCanvasDiagramElementTextBoxAttributes(clonedTextBox);
               clonedImg.linkedText = clonedTextBox;
@@ -317,6 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
               diagramsMakerCanvas.remove(img.linkedText);
             });
           } else {
+            setCombinedCanvasDiagramElementAndTextBoxAttributes(clonedImg);
             copiedOrCutCanvasObjects.push({ object: clonedImg, objectImageUrl: img.imageUrl });
           }
 
@@ -337,29 +350,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const clonedObjImageUrl = copiedObj.objectImageUrl;
 
         clonedObj.clone((pastedImg) => {
+          pastedImg.imageUrl = clonedObjImageUrl;
           setCanvasDiagramElementAttributes(pastedImg);
 
-          const fineScaleX = Math.round(pastedImg.scaleX * 100) / 100;
-          const fineScaleY = Math.round(pastedImg.scaleY * 100) / 100;
+          const fineScaleX = Number(pastedImg.scaleX.toFixed(2));
+          const fineScaleY = Number(pastedImg.scaleY.toFixed(2));
 
           pastedImg.set({
             left: clonedObj.left + 10,
             top: clonedObj.top + 10,
             scaleX: fineScaleX,
-            scaleY: fineScaleY,
-            imageUrl: clonedObjImageUrl
+            scaleY: fineScaleY
           });
 
-          pastedImg.scaleToWidth(pastedImg.width * pastedImg.scaleX);
-          pastedImg.scaleToHeight(pastedImg.height * pastedImg.scaleY);
+          pastedImg.scaleToWidth(pastedImg.width * clonedObj.scaleX);
+          pastedImg.scaleToHeight(pastedImg.height * clonedObj.scaleY);
 
           if (copiedObj.text) {
             copiedObj.text.clone((pastedTextBox) => {
               setCanvasDiagramElementTextBoxAttributes(pastedTextBox);
               pastedImg.linkedText = pastedTextBox;
-              setCombinedCanvasDiagramElementAndTextBoxAttributes(pastedImg, pastedTextBox);
+              setCombinedCanvasDiagramElementAndTextBoxAttributes(pastedImg);
               diagramsMakerCanvas.add(pastedTextBox);
             });
+          } else {
+            setCombinedCanvasDiagramElementAndTextBoxAttributes(pastedImg);
           }
 
           diagramsMakerCanvas.add(pastedImg);
@@ -372,7 +387,6 @@ document.addEventListener('DOMContentLoaded', () => {
           diagramsMakerCanvas.renderAll();
 
           if (index === copiedOrCutCanvasObjects.length - 1) {
-
             // Wait for all elements to be added before grouping them
             setTimeout(() => {
               const selection = new fabric.ActiveSelection(pastedObjects, {
@@ -439,8 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(`
       TODO: 
       Funcionalidades a implementar:
-      *Probar todos los control mas tal, ajsutanto tamaños de elementos y textos a muerte, para encontrar bugs.
-      *Problemas con copiar y pegar elementos de diferente tamaño y con control + z y control + y.
+      *NO SE PUEDE AJUSTAR EL PUTO TAMAÑO AL COPIAR Y PEGAR ELEMENTOS SIN TEXTO CON TAMAÑO CAMBIADO.
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
 
       Funcionalidades para la versión 1.1:
@@ -690,8 +703,10 @@ document.addEventListener('DOMContentLoaded', () => {
             scaleY: obj.scaleY
           });
 
-          img.scaleToWidth(img.width * img.scaleX);
-          img.scaleToHeight(img.height * img.scaleY);
+          img.scaleToWidth(img.width * obj.scaleX);
+          img.scaleToHeight(img.height * obj.scaleY);
+
+          console.log(img.getScaledWidth());
 
           if (jsonObjects[index + 1] && jsonObjects[index + 1].type === 'textbox') {
             imgLinkedTextBox = new fabric.Textbox(jsonObjects[index + 1].text);
