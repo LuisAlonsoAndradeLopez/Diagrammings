@@ -205,7 +205,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   diagramsMakerCanvas.on('object:moving', (event) => {
+    const addedObject = event.target;
     handleCanvasObjectEvent(event, true);
+    updateLinkedTextPositionForCanvasElement(addedObject);
   });
 
   diagramsMakerCanvas.on('object:modified', (event) => {
@@ -264,18 +266,27 @@ document.addEventListener('DOMContentLoaded', () => {
           clonedImg.imageUrl = img.imageUrl;
           setCanvasDiagramElementAttributes(clonedImg);
 
-          const fineScaleX = Number(img.scaleX.toFixed(2));
-          const fineScaleY = Number(img.scaleY.toFixed(2));
-
           clonedImg.set({
-            scaleX: fineScaleX,
-            scaleY: fineScaleY
+            scaleX: img.scaleX,
+            scaleY: img.scaleY,
+            width: img.width,
+            height: img.height
           });
 
-          if (img.linkedText) {
-            clonedImg.scaleToWidth(clonedImg.width * img.scaleX);
-            clonedImg.scaleToHeight(clonedImg.height * img.scaleX);
+          const originalScaledWidth = img.getScaledWidth();
+          const originalScaledHeight = img.getScaledHeight();
 
+          const clonedScaledWidth = clonedImg.getScaledWidth();
+          const clonedScaledHeight = clonedImg.getScaledHeight();
+
+          // Force synchronization if there is any mismatch
+          if (Math.abs(originalScaledWidth - clonedScaledWidth) > 0.0001 ||
+            Math.abs(originalScaledHeight - clonedScaledHeight) > 0.0001) {
+            clonedImg.scaleToWidth(originalScaledWidth);
+            clonedImg.scaleToHeight(originalScaledHeight);
+          }
+
+          if (img.linkedText) {
             img.linkedText.clone((clonedTextBox) => {
               setCanvasDiagramElementTextBoxAttributes(clonedTextBox);
               clonedImg.linkedText = clonedTextBox;
@@ -284,18 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
               copiedOrCutCanvasObjects.push({ object: clonedImg, objectImageUrl: img.imageUrl, text: clonedTextBox });
             });
           } else {
-            console.log("Pene");
-            clonedImg.once('load', () => {
-              clonedImg.scaleToWidth(clonedImg.width * clonedImg.scaleX);
-              clonedImg.scaleToHeight(clonedImg.height * clonedImg.scaleY);
-              console.log(img.getScaledWidth());
-              console.log(clonedImg.getScaledWidth());
-
-              setCombinedCanvasDiagramElementAndTextBoxAttributes(clonedImg);
-              copiedOrCutCanvasObjects.push({ object: clonedImg, objectImageUrl: img.imageUrl });
-            });
+            setCombinedCanvasDiagramElementAndTextBoxAttributes(clonedImg);
+            copiedOrCutCanvasObjects.push({ object: clonedImg, objectImageUrl: img.imageUrl });
           }
-
         });
       });
     }
@@ -308,18 +310,27 @@ document.addEventListener('DOMContentLoaded', () => {
           clonedImg.imageUrl = img.imageUrl;
           setCanvasDiagramElementAttributes(clonedImg);
 
-          const fineScaleX = Number(img.scaleX.toFixed(2));
-          const fineScaleY = Number(img.scaleY.toFixed(2));
-
           clonedImg.set({
-            scaleX: fineScaleX,
-            scaleY: fineScaleY
+            scaleX: img.scaleX,
+            scaleY: img.scaleY,
+            width: img.width,
+            height: img.height
           });
 
-          if (img.linkedText) {
-            clonedImg.scaleToWidth(clonedImg.width * img.scaleX);
-            clonedImg.scaleToHeight(clonedImg.height * img.scaleY);
+          const originalScaledWidth = img.getScaledWidth();
+          const originalScaledHeight = img.getScaledHeight();
 
+          const clonedScaledWidth = clonedImg.getScaledWidth();
+          const clonedScaledHeight = clonedImg.getScaledHeight();
+
+          // Force synchronization if there is any mismatch
+          if (Math.abs(originalScaledWidth - clonedScaledWidth) > 0.0001 ||
+            Math.abs(originalScaledHeight - clonedScaledHeight) > 0.0001) {
+            clonedImg.scaleToWidth(originalScaledWidth);
+            clonedImg.scaleToHeight(originalScaledHeight);
+          }
+
+          if (img.linkedText) {
             img.linkedText.clone((clonedTextBox) => {
               setCanvasDiagramElementTextBoxAttributes(clonedTextBox);
               clonedImg.linkedText = clonedTextBox;
@@ -353,18 +364,27 @@ document.addEventListener('DOMContentLoaded', () => {
           pastedImg.imageUrl = clonedObjImageUrl;
           setCanvasDiagramElementAttributes(pastedImg);
 
-          const fineScaleX = Number(pastedImg.scaleX.toFixed(2));
-          const fineScaleY = Number(pastedImg.scaleY.toFixed(2));
-
           pastedImg.set({
+            scaleX: clonedObj.scaleX,
+            scaleY: clonedObj.scaleY,
             left: clonedObj.left + 10,
             top: clonedObj.top + 10,
-            scaleX: fineScaleX,
-            scaleY: fineScaleY
+            width: clonedObj.width,
+            height: clonedObj.height
           });
 
-          pastedImg.scaleToWidth(pastedImg.width * clonedObj.scaleX);
-          pastedImg.scaleToHeight(pastedImg.height * clonedObj.scaleY);
+          const originalScaledWidth = clonedObj.getScaledWidth();
+          const originalScaledHeight = clonedObj.getScaledHeight();
+
+          const clonedScaledWidth = pastedImg.getScaledWidth();
+          const clonedScaledHeight = pastedImg.getScaledHeight();
+
+          // Force synchronization if there is any mismatch
+          if (Math.abs(originalScaledWidth - clonedScaledWidth) > 0.0001 ||
+            Math.abs(originalScaledHeight - clonedScaledHeight) > 0.0001) {
+            pastedImg.scaleToWidth(originalScaledWidth);
+            pastedImg.scaleToHeight(originalScaledHeight);
+          }
 
           if (copiedObj.text) {
             copiedObj.text.clone((pastedTextBox) => {
@@ -403,6 +423,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 obj.left += offsetX;
                 obj.top += offsetY;
                 obj.setCoords();
+
+                updateLinkedTextPositionForCanvasElement(obj);
               });
 
               diagramsMakerCanvas.discardActiveObject();
@@ -411,6 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
               const finalSelection = new fabric.ActiveSelection(pastedObjects, {
                 canvas: diagramsMakerCanvas,
               });
+
               diagramsMakerCanvas.setActiveObject(finalSelection);
               diagramsMakerCanvas.renderAll();
             }, 0);
@@ -453,7 +476,6 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(`
       TODO: 
       Funcionalidades a implementar:
-      *NO SE PUEDE AJUSTAR EL PUTO TAMAÑO AL COPIAR Y PEGAR ELEMENTOS SIN TEXTO CON TAMAÑO CAMBIADO.
       *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
 
       Funcionalidades para la versión 1.1:
@@ -697,16 +719,26 @@ document.addEventListener('DOMContentLoaded', () => {
           setCanvasDiagramElementAttributes(img);
 
           img.set({
+            scaleX: obj.scaleX,
+            scaleY: obj.scaleY,
             left: obj.left,
             top: obj.top,
-            scaleX: obj.scaleX,
-            scaleY: obj.scaleY
+            width: obj.width,
+            height: obj.height
           });
 
-          img.scaleToWidth(img.width * obj.scaleX);
-          img.scaleToHeight(img.height * obj.scaleY);
+          const originalScaledWidth = obj.width * obj.scaleX;
+          const originalScaledHeight = obj.height * obj.scaleY;
 
-          console.log(img.getScaledWidth());
+          const clonedScaledWidth = img.getScaledWidth();
+          const clonedScaledHeight = img.getScaledHeight();
+
+          // Force synchronization if there is any mismatch
+          if (Math.abs(originalScaledWidth - clonedScaledWidth) > 0.0001 ||
+            Math.abs(originalScaledHeight - clonedScaledHeight) > 0.0001) {
+            img.scaleToWidth(originalScaledWidth);
+            img.scaleToHeight(originalScaledHeight);
+          }
 
           if (jsonObjects[index + 1] && jsonObjects[index + 1].type === 'textbox') {
             imgLinkedTextBox = new fabric.Textbox(jsonObjects[index + 1].text);
