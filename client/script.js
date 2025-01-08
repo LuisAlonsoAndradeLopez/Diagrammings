@@ -202,23 +202,29 @@ document.addEventListener('DOMContentLoaded', () => {
   diagramsMakerCanvas.on('object:added', (event) => {
     const addedObject = event.target;
     updateLinkedTextPositionForCanvasElement(addedObject);
+    diagramsMakerCanvas.renderAll();
   });
 
   diagramsMakerCanvas.on('object:moving', (event) => {
-    const addedObject = event.target;
-    handleCanvasObjectEvent(event, true);
-    updateLinkedTextPositionForCanvasElement(addedObject);
+    console.log("Left: " + event.target.left);
+    console.log("Top: " + event.target.top);
+    handleCanvasObjectEvent(event);
+    diagramsMakerCanvas.renderAll();
   });
 
   diagramsMakerCanvas.on('object:modified', (event) => {
     handleCanvasObjectEvent(event);
+    diagramsMakerCanvas.renderAll();
     saveCanvasState();
   });
 
   diagramsMakerCanvas.on('selection:cleared', () => {
     diagramsMakerCanvas.getObjects('image').forEach((img) => {
+      updateLinkedTextPositionForCanvasElement(img);
+
       if (img.linkedText) {
         img.linkedText.evented = false;
+        img.linkedText.visible = true;
       }
     });
 
@@ -406,6 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
           pastedObjects.push(pastedImg)
           diagramsMakerCanvas.renderAll();
 
+
           if (index === copiedOrCutCanvasObjects.length - 1) {
             // Wait for all elements to be added before grouping them
             setTimeout(() => {
@@ -474,13 +481,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   helpButton.addEventListener('click', () => {
     alert(`
-      TODO: 
-      Funcionalidades a implementar:
-      *Cuando se mueven más de un elemento, el texto siempre debe moverse como debe.
-
-      Funcionalidades para la versión 1.1:
-      *Ctrl + Z para los componentes gráficos para edición.
-
       *Ctrl + Z: Revertir cambios.
       *Ctrl + Y: Recuperar elementos de la reversión de cambios. 
       *Ctrl + C: Copiar elementos seleccionados.
@@ -786,21 +786,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function handleCanvasObjectEvent(event, shouldRender = false) {
+  function handleCanvasObjectEvent(event) {
     const selectedElements = event.target;
 
     if (selectedElements.type === 'activeSelection') {
       selectedElements._objects.forEach((obj) => {
         if (obj.linkedText && !includeAndExtendsTextImages.includes(obj.imageUrl)) {
-          updateLinkedTextPositionForCanvasElement(obj);
+          obj.linkedText.visible = false;
         }
       });
     } else if (selectedElements.linkedText && !includeAndExtendsTextImages.includes(selectedElements.imageUrl)) {
       updateLinkedTextPositionForCanvasElement(selectedElements);
-    }
-
-    if (shouldRender) {
-      diagramsMakerCanvas.renderAll();
     }
   }
 
@@ -912,7 +908,7 @@ document.addEventListener('DOMContentLoaded', () => {
           updateLinkedTextPositionForCanvasElement(img);
         }
       }
-    })
+    });
 
     img.on('rotating', () => {
       if (img.linkedText && !includeAndExtendsTextImages.includes(img.imageUrl)) {
@@ -922,7 +918,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     img.on('selected', () => {
       const activeObjects = diagramsMakerCanvas.getActiveObjects();
-
 
       if (selectedCanvasObjectsForEdit.includes(img)) {
         const index = selectedCanvasObjectsForEdit.indexOf(img);
@@ -995,18 +990,24 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateLinkedTextPositionForCanvasElement(canvasElement) {
     if (!canvasElement.linkedText) return;
 
+    const { linkedText } = canvasElement;
+    const scaledWidth = canvasElement.width * canvasElement.scaleX;
+    const scaledHeight = canvasElement.height * canvasElement.scaleY;
+
+    // Update linked text position based on categories
     if (centeredImages.includes(canvasElement.imageUrl)) {
-      canvasElement.linkedText.left = canvasElement.left + canvasElement.getScaledWidth() / 2 - canvasElement.linkedText.width / 2;
-      canvasElement.linkedText.top = canvasElement.top + canvasElement.getScaledHeight() / 2 - canvasElement.linkedText.height / 2;
+      linkedText.left = canvasElement.left + scaledWidth / 2 - linkedText.width / 2;
+      linkedText.top = canvasElement.top + scaledHeight / 2 - linkedText.height / 2;
     } else if (belowImages.includes(canvasElement.imageUrl)) {
-      canvasElement.linkedText.left = canvasElement.left + canvasElement.getScaledWidth() / 2 - canvasElement.linkedText.width / 2;
-      canvasElement.linkedText.top = canvasElement.top + canvasElement.getScaledHeight();
+      linkedText.left = canvasElement.left + scaledWidth / 2 - linkedText.width / 2;
+      linkedText.top = canvasElement.top + scaledHeight;
     } else if (aboveImages.includes(canvasElement.imageUrl)) {
-      canvasElement.linkedText.left = canvasElement.left + canvasElement.getScaledWidth() / 2 - canvasElement.linkedText.width / 2;
-      canvasElement.linkedText.top = canvasElement.top - canvasElement.linkedText.height;
+      linkedText.left = canvasElement.left + scaledWidth / 2 - linkedText.width / 2;
+      linkedText.top = canvasElement.top - linkedText.height;
     }
 
-    canvasElement.linkedText.setCoords();
+    // Update linked text coordinates
+    linkedText.setCoords();
   }
 
   function zoomCanvas(factor) {

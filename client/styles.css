@@ -83,7 +83,6 @@ body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div
 }
 body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #start-end-element-img,
 body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #input-output-element-img,
-body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #document-element-img,
 body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #use-case-element-img,
 body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #system-element-img {
   display: block;
@@ -91,12 +90,34 @@ body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div
   height: 60px;
   cursor: grab;
 }
-body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #decision-element-img,
-body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #on-page-reference-element-img,
-body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #off-page-reference-element-img {
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #document-element-img {
+  display: block;
+  width: 100px;
+  height: 60px;
+  margin-left: 12px;
+  cursor: grab;
+}
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #decision-element-img {
   display: block;
   width: 70px;
   height: 70px;
+  margin-left: 18px;
+  cursor: grab;
+}
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #on-page-reference-element-img {
+  display: block;
+  width: 60px;
+  height: 60px;
+  padding: 5px;
+  margin-left: 4px;
+  cursor: grab;
+}
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #off-page-reference-element-img {
+  display: block;
+  width: 60px;
+  height: 60px;
+  padding: 5px;
+  margin-left: 26px;
   cursor: grab;
 }
 body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #process-element-img {
@@ -105,16 +126,18 @@ body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div
   height: 50px;
   cursor: grab;
 }
+body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #actor-element-img {
+  display: block;
+  width: 40px;
+  height: 80px;
+  margin-left: 32px;
+  cursor: grab;
+}
 body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #use-case-element-img {
   display: block;
   width: 100px;
   height: 50px;
-  cursor: grab;
-}
-body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #actor-element-img {
-  display: block;
-  width: 50px;
-  height: 80px;
+  margin-left: 25px;
   cursor: grab;
 }
 body #diagramming-content #diagrams-elements-selector-div #diagrams-elements-div .diagram-elements-organizer #flow-element-img,
