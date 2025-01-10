@@ -25,9 +25,11 @@ const setElementsInFrontButton = document.getElementById('set-elements-in-front-
 const setElementsAtTheBottomButton = document.getElementById('set-elements-at-the-bottom-button');
 
 const diagramsMakerCanvasHtmlElement = document.getElementById('diagrams-maker-canvas');
-export const diagramsMakerCanvas = new fabric.Canvas(diagramsMakerCanvasHtmlElement);
+const diagramsMakerCanvas = new fabric.Canvas(diagramsMakerCanvasHtmlElement);
 
 const diagramElements = document.querySelectorAll('.diagram-element');
+
+const userId = Math.random().toString(36).substring(2, 15);
 
 let canvasHistory = [];
 let canvasHistoryRedo = [];
@@ -40,6 +42,8 @@ let previouslySelectedObjects = [];
 let selectedCanvasObjectsForEdit = [];
 let selectedCanvasObjectsForDelete = [];
 let copiedOrCutCanvasObjects = [];
+
+let connectedRemoteCursors = {};
 
 const aboveImages = ['system.png'];
 
@@ -168,6 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
       diagramsMakerCanvas.renderAll();
       canvasHistory.push(diagramsMakerCanvas.toJSON());
       sendCurrentCanvasStateToAllConnectedClients();
+      previouslySelectedObjects = diagramsMakerCanvas.getActiveObjects();
+      socket.send(JSON.stringify({ type: "lock", objects: previouslySelectedObjects }));
     });
   });
 
@@ -196,6 +202,15 @@ document.addEventListener('DOMContentLoaded', () => {
       canvasLastPanPosition.x = event.e.clientX;
       canvasLastPanPosition.y = event.e.clientY;
     }
+
+    //const cursorData = {
+    //  x: mousePointer.x,
+    //  y: mousePointer.y,
+    //  userId: userId,
+    //};
+//
+    //// Send cursor data to the WebSocket server
+    //socket.send(JSON.stringify({ type: "cursorData", objects: cursorData }));
   });
 
   diagramsMakerCanvas.on('mouse:up', () => {
@@ -240,12 +255,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   diagramsMakerCanvas.on('selection:created', (event) => {
+    console.log("de burro");
     lockSelectionControls();
     previouslySelectedObjects = event.selected;
     socket.send(JSON.stringify({ type: "lock", objects: previouslySelectedObjects }));
   });
 
+
   diagramsMakerCanvas.on('selection:updated', (event) => {
+    console.log("Pene");
     lockSelectionControls();
     previouslySelectedObjects = event.selected;
     socket.send(JSON.stringify({ type: "lock", objects: previouslySelectedObjects }));
@@ -259,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
         canvasHistoryRedo.push(currentState);
 
         const jsonObjects = canvasHistory[canvasHistory.length - 1].objects;
-        diagramsMakerCanvas.clear();
+        clearCanvas();
         console.log(jsonObjects);
         generateCanvasElementsFromCanvasState(jsonObjects);
         diagramsMakerCanvas.renderAll();
@@ -274,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const nextState = canvasHistoryRedo.pop();
         canvasHistory.push(nextState);
 
-        diagramsMakerCanvas.clear();
+        clearCanvas();
         generateCanvasElementsFromCanvasState(jsonObjects);
         diagramsMakerCanvas.renderAll();
       }
@@ -486,6 +504,9 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
       });
+
+      previouslySelectedObjects = pastedObjects;
+      socket.send(JSON.stringify({ type: "lock", objects: previouslySelectedObjects }));
     }
 
     if (event.key === 'Backspace' && selectedCanvasObjectsForDelete.length > 0) {
@@ -521,6 +542,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   helpButton.addEventListener('click', () => {
     alert(`
+      *Callback y guardado de estado para botones de posicionamiento
+      *Selección y deselección de elementos entre clientes bien hecho por favor
+
       *Ctrl + Z: Revertir cambios.
       *Ctrl + Y: Recuperar elementos de la reversión de cambios. 
       *Ctrl + C: Copiar elementos seleccionados.
@@ -663,6 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     diagramsMakerCanvas.renderAll();
+    sendCurrentCanvasStateToAllConnectedClients();
   });
 
   setElementsBehindButton.addEventListener('click', () => {
@@ -695,18 +720,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     diagramsMakerCanvas.renderAll();
+    sendCurrentCanvasStateToAllConnectedClients();
   });
 
   setElementsInFrontButton.addEventListener('click', () => {
     diagramsMakerCanvas.bringToFront(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
     diagramsMakerCanvas.bringToFront(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
     diagramsMakerCanvas.renderAll();
+    sendCurrentCanvasStateToAllConnectedClients();
   });
 
   setElementsAtTheBottomButton.addEventListener('click', () => {
     diagramsMakerCanvas.sendToBack(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
     diagramsMakerCanvas.sendToBack(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
     diagramsMakerCanvas.renderAll();
+    sendCurrentCanvasStateToAllConnectedClients();
   });
 
   textAlignLeftButton.addEventListener('click', () => {
@@ -1120,13 +1148,18 @@ function zoomCanvas(factor) {
   diagramsMakerCanvas.renderAll();
 }
 
-
-//This functiona is only to be executed by diagrammings_server_connection.js
+//Functions for use for both scripts.js and diagrammings_server_connection.js
 export function clearCanvas() {
   diagramsMakerCanvas.clear();
+  //connectedRemoteCursors.forEach(obj => diagramsMakerCanvas.add(obj));
+  //diagramsMakerCanvas.renderAll();
 }
 
+//This functions is only to be executed by diagrammings_server_connection.js
 export function lockCanvasObjects(canvasObjectsToLock) {
+  selectedImageDiv.style.display = 'none';
+  nonSelectedImageDiv.style.display = 'block';
+
   canvasObjectsToLock.forEach((lockObject) => {
     const canvasObjectToLock = diagramsMakerCanvas.getObjects().find(obj => obj.id === lockObject.id);
     if (canvasObjectToLock) {
@@ -1142,8 +1175,6 @@ export function lockCanvasObjects(canvasObjectsToLock) {
 
   diagramsMakerCanvas.renderAll();
 
-  selectedImageDiv.style.display = 'none';
-  nonSelectedImageDiv.style.display = 'block';
 }
 
 export function unlockCanvasObjects(canvasObjectsToUnlock) {
@@ -1159,6 +1190,36 @@ export function unlockCanvasObjects(canvasObjectsToUnlock) {
       });
     }
   });
+
+  diagramsMakerCanvas.renderAll();
+}
+
+export function renderRemoteCursors(remoteCursor) {
+  console.log(remoteCursor)
+  const { x, y, userId } = remoteCursor;
+
+  if (!connectedRemoteCursors[userId]) {
+    const cursor = new fabric.Group([
+      new fabric.Circle({
+        left: x,
+        top: y,
+        radius: 5,
+        fill: 'blue',
+        selectable: false,
+      }),
+      new fabric.Text(userId, {
+        left: x + 10, // Position the text near the circle
+        top: y - 10,
+        fontSize: 12,
+        fill: 'black',
+        selectable: false,
+      }),
+    ]);
+    connectedRemoteCursors[userId] = cursor;
+    diagramsMakerCanvas.add(cursor);
+  } else {
+    connectedRemoteCursors[userId].set({ left: x, top: y });
+  }
 
   diagramsMakerCanvas.renderAll();
 }
