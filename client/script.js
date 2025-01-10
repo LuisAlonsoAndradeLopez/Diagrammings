@@ -1,83 +1,85 @@
+import { socket } from './diagrammings_server_connection.js';
+
+const helpButton = document.getElementById('help-button');
+const exportButton = document.getElementById('export-button');
+const canvasContainer = document.getElementById('diagramming-content');
+const diagramsElementsEditorDiv = document.getElementById('diagrams-elements-editor-div');
+const nonSelectedImageDiv = document.getElementById('non-selected-image-div');
+const selectedImageDiv = document.getElementById('selected-image-div');
+const textH2 = document.getElementById('text-h2');
+const selectedElementTextInputDiv = document.getElementById('selected-element-text-input-div');
+const selectedElementTextInput = document.getElementById('selected-element-text-input');
+const textModifiersDiv = document.getElementById('text-modifiers-div');
+const textAlignLeftButton = document.getElementById('text-align-left-button');
+const textAlignCenterButton = document.getElementById('text-align-center-button');
+const textAlignRightButton = document.getElementById('text-align-right-button');
+const textAlignJustifyButton = document.getElementById('text-align-justify-button');
+const textFontSizeInput = document.getElementById('text-font-size-input');
+const includeExtendsInputsDiv = document.getElementById('include-extends-inputs-div');
+const includeInput = document.getElementById('include-input');
+const extendsInput = document.getElementById('extends-input');
+const positioningDiv = document.getElementById('positioning-div');
+const setElementsInFrontOfButton = document.getElementById('set-elements-in-front-of-button');
+const setElementsBehindButton = document.getElementById('set-elements-behind-button');
+const setElementsInFrontButton = document.getElementById('set-elements-in-front-button');
+const setElementsAtTheBottomButton = document.getElementById('set-elements-at-the-bottom-button');
+
+const diagramsMakerCanvasHtmlElement = document.getElementById('diagrams-maker-canvas');
+export const diagramsMakerCanvas = new fabric.Canvas(diagramsMakerCanvasHtmlElement);
+
+const diagramElements = document.querySelectorAll('.diagram-element');
+
+let canvasHistory = [];
+let canvasHistoryRedo = [];
+
+let canvasZoomLevel = 1;
+let canvasIsPanning = false;
+let canvasLastPanPosition = { x: 0, y: 0 };
+
+let selectedCanvasObjectsForEdit = [];
+let selectedCanvasObjectsForDelete = [];
+let copiedOrCutCanvasObjects = [];
+
+const aboveImages = ['system.png'];
+
+const belowImages = ['actor.png', 'dependency.png'];
+
+const centeredImages = [
+  'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
+  'process.png', 'start_end.png', 'use_case.png'
+];
+
+const includeAndExtendsTextImages = ['dependency.png'];
+
+const normalTextImages = [
+  'actor.png', 'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
+  'process.png', 'start_end.png', 'system.png', 'use_case.png'
+];
+
+const notRotatingImages = [
+  'actor.png', 'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
+  'process.png', 'start_end.png', 'system.png', 'use_case.png'
+];
+
+const notScalingImages = [
+  'actor.png', 'off_page_reference.png', 'on_page_reference.png'
+];
+
+const notScalingXAndYImages = [
+  'decision.png', 'document.png', 'input_output.png', 'process.png', 'start_end.png', 'use_case.png'
+];
+
+const notScalingYAndFlipImages = [
+  'asociation.png', 'dependency.png', 'generalization.png', 'flow.png'
+];
+
+const notTextImages = [
+  'asociation.png', 'generalization.png', 'flow.png'
+];
+
+let mousePointer = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-  const helpButton = document.getElementById('help-button');
-  const exportButton = document.getElementById('export-button');
-  const canvasContainer = document.getElementById('diagramming-content');
-  const diagramsMakerCanvasHtmlElement = document.getElementById('diagrams-maker-canvas');
-  const diagramsElementsEditorDiv = document.getElementById('diagrams-elements-editor-div');
-  const nonSelectedImageDiv = document.getElementById('non-selected-image-div');
-  const selectedImageDiv = document.getElementById('selected-image-div');
-  const textH2 = document.getElementById('text-h2');
-  const selectedElementTextInputDiv = document.getElementById('selected-element-text-input-div');
-  const selectedElementTextInput = document.getElementById('selected-element-text-input');
-  const textModifiersDiv = document.getElementById('text-modifiers-div');
-  const textAlignLeftButton = document.getElementById('text-align-left-button');
-  const textAlignCenterButton = document.getElementById('text-align-center-button');
-  const textAlignRightButton = document.getElementById('text-align-right-button');
-  const textAlignJustifyButton = document.getElementById('text-align-justify-button');
-  const textFontSizeInput = document.getElementById('text-font-size-input');
-  const includeExtendsInputsDiv = document.getElementById('include-extends-inputs-div');
-  const includeInput = document.getElementById('include-input');
-  const extendsInput = document.getElementById('extends-input');
-  const positioningDiv = document.getElementById('positioning-div');
-  const setElementsInFrontOfButton = document.getElementById('set-elements-in-front-of-button');
-  const setElementsBehindButton = document.getElementById('set-elements-behind-button');
-  const setElementsInFrontButton = document.getElementById('set-elements-in-front-button');
-  const setElementsAtTheBottomButton = document.getElementById('set-elements-at-the-bottom-button');
-
-  const diagramElements = document.querySelectorAll('.diagram-element');
-
-  const diagramsMakerCanvas = new fabric.Canvas(diagramsMakerCanvasHtmlElement);
-
-  let canvasHistory = [];
-  let canvasHistoryRedo = [];
-
-  let canvasZoomLevel = 1;
-  let canvasIsPanning = false;
-  let canvasLastPanPosition = { x: 0, y: 0 };
-
-  let selectedCanvasObjectsForEdit = [];
-  let selectedCanvasObjectsForDelete = [];
-  let copiedOrCutCanvasObjects = [];
-
-  const aboveImages = ['system.png'];
-
-  const belowImages = ['actor.png', 'dependency.png'];
-
-  const centeredImages = [
-    'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
-    'process.png', 'start_end.png', 'use_case.png'
-  ];
-
-  const includeAndExtendsTextImages = ['dependency.png'];
-
-  const normalTextImages = [
-    'actor.png', 'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
-    'process.png', 'start_end.png', 'system.png', 'use_case.png'
-  ];
-
-  const notRotatingImages = [
-    'actor.png', 'decision.png', 'document.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
-    'process.png', 'start_end.png', 'system.png', 'use_case.png'
-  ];
-
-  const notScalingImages = [
-    'actor.png', 'off_page_reference.png', 'on_page_reference.png'
-  ];
-
-  const notScalingXAndYImages = [
-    'decision.png', 'document.png', 'input_output.png', 'process.png', 'start_end.png', 'use_case.png'
-  ];
-
-  const notScalingYAndFlipImages = [
-    'asociation.png', 'dependency.png', 'generalization.png', 'flow.png'
-  ];
-
-  const notTextImages = [
-    'asociation.png', 'generalization.png', 'flow.png'
-  ];
-
-  let mousePointer = null;
-
   diagramElements.forEach((element) => {
     element.addEventListener('dragstart', (event) => {
       event.dataTransfer.setData('text/plain', event.target.src);
@@ -163,7 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       diagramsMakerCanvas.setActiveObject(img);
       diagramsMakerCanvas.renderAll();
-      saveCanvasState();
+      canvasHistory.push(diagramsMakerCanvas.toJSON());
+      sendCurrentCanvasStateToAllConnectedClients();
     });
   });
 
@@ -206,8 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   diagramsMakerCanvas.on('object:moving', (event) => {
-    console.log("Left: " + event.target.left);
-    console.log("Top: " + event.target.top);
     handleCanvasObjectEvent(event);
     diagramsMakerCanvas.renderAll();
   });
@@ -215,7 +216,8 @@ document.addEventListener('DOMContentLoaded', () => {
   diagramsMakerCanvas.on('object:modified', (event) => {
     handleCanvasObjectEvent(event);
     diagramsMakerCanvas.renderAll();
-    saveCanvasState();
+    canvasHistory.push(diagramsMakerCanvas.toJSON());
+    sendCurrentCanvasStateToAllConnectedClients();
   });
 
   diagramsMakerCanvas.on('selection:cleared', () => {
@@ -248,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(jsonObjects);
         generateCanvasElementsFromCanvasState(jsonObjects);
         diagramsMakerCanvas.renderAll();
+        sendCurrentCanvasStateToAllConnectedClients();
       }
     }
 
@@ -295,6 +298,13 @@ document.addEventListener('DOMContentLoaded', () => {
           if (img.linkedText) {
             img.linkedText.clone((clonedTextBox) => {
               setCanvasDiagramElementTextBoxAttributes(clonedTextBox);
+              clonedTextBox.set({
+                left: img.linkedText.left,
+                top: img.linkedText.top,
+                fontSize: img.linkedText.fontSize,
+                textAlign: img.linkedText.textAlign
+              });
+
               clonedImg.linkedText = clonedTextBox;
               setCombinedCanvasDiagramElementAndTextBoxAttributes(clonedImg);
 
@@ -339,6 +349,13 @@ document.addEventListener('DOMContentLoaded', () => {
           if (img.linkedText) {
             img.linkedText.clone((clonedTextBox) => {
               setCanvasDiagramElementTextBoxAttributes(clonedTextBox);
+              clonedTextBox.set({
+                left: img.linkedText.left,
+                top: img.linkedText.top,
+                fontSize: img.linkedText.fontSize,
+                textAlign: img.linkedText.textAlign
+              });
+
               clonedImg.linkedText = clonedTextBox;
               setCombinedCanvasDiagramElementAndTextBoxAttributes(clonedImg, clonedTextBox);
 
@@ -354,6 +371,8 @@ document.addEventListener('DOMContentLoaded', () => {
           diagramsMakerCanvas.discardActiveObject();
         });
       });
+
+      sendCurrentCanvasStateToAllConnectedClients();
 
       nonSelectedImageDiv.style.display = 'block';
       selectedImageDiv.style.display = 'none';
@@ -395,6 +414,13 @@ document.addEventListener('DOMContentLoaded', () => {
           if (copiedObj.text) {
             copiedObj.text.clone((pastedTextBox) => {
               setCanvasDiagramElementTextBoxAttributes(pastedTextBox);
+              pastedTextBox.set({
+                left: copiedObj.text.left,
+                top: copiedObj.text.top,
+                fontSize: copiedObj.text.fontSize,
+                textAlign: copiedObj.text.textAlign
+              });
+
               pastedImg.linkedText = pastedTextBox;
               setCombinedCanvasDiagramElementAndTextBoxAttributes(pastedImg);
               diagramsMakerCanvas.add(pastedTextBox);
@@ -464,7 +490,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       diagramsMakerCanvas.renderAll();
-      saveCanvasState();
+      canvasHistory.push(diagramsMakerCanvas.toJSON());
+      sendCurrentCanvasStateToAllConnectedClients();
 
       nonSelectedImageDiv.style.display = 'block';
       selectedImageDiv.style.display = 'none';
@@ -565,21 +592,31 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   includeInput.addEventListener('click', () => {
-    extendsInput.checked = false;
-    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = "<<include>>";
-    diagramsMakerCanvas.renderAll();
+    if (selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text !== "<<include>>") {
+      extendsInput.checked = false;
+      selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = "<<include>>";
+      diagramsMakerCanvas.renderAll();
+      canvasHistory.push(diagramsMakerCanvas.toJSON());
+      sendCurrentCanvasStateToAllConnectedClients();
+    }
   });
 
   extendsInput.addEventListener('click', () => {
-    includeInput.checked = false;
-    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = "<<extends>>";
-    diagramsMakerCanvas.renderAll();
+    if (selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text !== "<<extends>>") {
+      includeInput.checked = false;
+      selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = "<<extends>>";
+      diagramsMakerCanvas.renderAll();
+      canvasHistory.push(diagramsMakerCanvas.toJSON());
+      sendCurrentCanvasStateToAllConnectedClients();
+    }
   });
 
   selectedElementTextInput.addEventListener('input', () => {
     selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.text = selectedElementTextInput.value;
     updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
     diagramsMakerCanvas.renderAll();
+    canvasHistory.push(diagramsMakerCanvas.toJSON());
+    sendCurrentCanvasStateToAllConnectedClients();
   });
 
   setElementsInFrontOfButton.addEventListener('click', () => {
@@ -660,27 +697,43 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   textAlignLeftButton.addEventListener('click', () => {
-    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign = 'left';
-    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-    diagramsMakerCanvas.renderAll();
+    if (selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign !== 'left') {
+      selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign = 'left';
+      updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+      diagramsMakerCanvas.renderAll();
+      canvasHistory.push(diagramsMakerCanvas.toJSON());
+      sendCurrentCanvasStateToAllConnectedClients();
+    }
   });
 
   textAlignCenterButton.addEventListener('click', () => {
-    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign = 'center';
-    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-    diagramsMakerCanvas.renderAll();
+    if (selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign !== 'center') {
+      selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign = 'center';
+      updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+      diagramsMakerCanvas.renderAll();
+      canvasHistory.push(diagramsMakerCanvas.toJSON());
+      sendCurrentCanvasStateToAllConnectedClients();
+    }
   });
 
   textAlignRightButton.addEventListener('click', () => {
-    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign = 'right';
-    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-    diagramsMakerCanvas.renderAll();
+    if (selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign !== 'right') {
+      selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign = 'right';
+      updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+      diagramsMakerCanvas.renderAll();
+      canvasHistory.push(diagramsMakerCanvas.toJSON());
+      sendCurrentCanvasStateToAllConnectedClients();
+    }
   });
 
   textAlignJustifyButton.addEventListener('click', () => {
-    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign = 'justify';
-    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-    diagramsMakerCanvas.renderAll();
+    if (selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign !== 'justify') {
+      selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.textAlign = 'justify';
+      updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+      diagramsMakerCanvas.renderAll();
+      canvasHistory.push(diagramsMakerCanvas.toJSON());
+      sendCurrentCanvasStateToAllConnectedClients();
+    }
   });
 
   textFontSizeInput.addEventListener('keydown', (event) => {
@@ -702,319 +755,360 @@ document.addEventListener('DOMContentLoaded', () => {
       textFontSizeInput.value = 32;
     }
 
-    selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.fontSize = textFontSizeInput.value;
-    updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-    diagramsMakerCanvas.renderAll();
+    if (selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.fontSize !== textFontSizeInput.value) {
+      selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText.fontSize = textFontSizeInput.value;
+      updateLinkedTextPositionForCanvasElement(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+      diagramsMakerCanvas.renderAll();
+      canvasHistory.push(diagramsMakerCanvas.toJSON());
+      sendCurrentCanvasStateToAllConnectedClients();
+    }
   });
 
-  function generateCanvasElementsFromCanvasState(jsonObjects) {
-    jsonObjects.forEach((obj, index) => {
-      if (obj.type === 'image') {
-        fabric.Image.fromURL(obj.src, (img) => {
-          img.set({
-            imageUrl: obj.src.split('/').pop()
-          });
+  canvasHistory.push(diagramsMakerCanvas.toJSON());
+});
 
-          let imgLinkedTextBox;
-          setCanvasDiagramElementAttributes(img);
 
-          img.set({
-            scaleX: obj.scaleX,
-            scaleY: obj.scaleY,
-            left: obj.left,
-            top: obj.top,
-            width: obj.width,
-            height: obj.height
-          });
-
-          const originalScaledWidth = obj.width * obj.scaleX;
-          const originalScaledHeight = obj.height * obj.scaleY;
-
-          const clonedScaledWidth = img.getScaledWidth();
-          const clonedScaledHeight = img.getScaledHeight();
-
-          // Force synchronization if there is any mismatch
-          if (Math.abs(originalScaledWidth - clonedScaledWidth) > 0.0001 ||
-            Math.abs(originalScaledHeight - clonedScaledHeight) > 0.0001) {
-            img.scaleToWidth(originalScaledWidth);
-            img.scaleToHeight(originalScaledHeight);
-          }
-
-          if (jsonObjects[index + 1] && jsonObjects[index + 1].type === 'textbox') {
-            imgLinkedTextBox = new fabric.Textbox(jsonObjects[index + 1].text);
-            setCanvasDiagramElementTextBoxAttributes(imgLinkedTextBox);
-
-            if (includeAndExtendsTextImages.includes(img.imageUrl)) {
-              textBox.set({
-                text: '<<include>>',
-                editable: true,
-                evented: true,
-                hasControls: true,
-                hasBorders: true,
-                selectable: true,
-              });
-
-              textBox.setControlsVisibility({
-                mtr: false,
-                mt: false,
-                mb: false,
-                ml: false,
-                mr: false,
-                bl: true,
-                br: true,
-                tl: true,
-                tr: true,
-              });
-            }
-
-            img.linkedText = imgLinkedTextBox;
-
-          }
-
-          setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
-          diagramsMakerCanvas.add(img);
-
-          if (img.linkedText) {
-            diagramsMakerCanvas.add(imgLinkedTextBox);
-            img.linkedText.bringForward();
-          }
-
-          diagramsMakerCanvas.renderAll();
-
+//This function can be used in the current file and diagrammings_server_connection
+export function generateCanvasElementsFromCanvasState(jsonObjects) {
+  jsonObjects.forEach((obj, index) => {
+    if (obj.type === 'image') {
+      fabric.Image.fromURL(obj.src, (img) => {
+        img.set({
+          imageUrl: obj.src.split('/').pop()
         });
+
+        let imgLinkedTextBox;
+        setCanvasDiagramElementAttributes(img);
+
+        img.set({
+          scaleX: obj.scaleX,
+          scaleY: obj.scaleY,
+          left: obj.left,
+          top: obj.top,
+          width: obj.width,
+          height: obj.height
+        });
+
+        const originalScaledWidth = obj.width * obj.scaleX;
+        const originalScaledHeight = obj.height * obj.scaleY;
+
+        const clonedScaledWidth = img.getScaledWidth();
+        const clonedScaledHeight = img.getScaledHeight();
+
+        // Force synchronization if there is any mismatch
+        if (Math.abs(originalScaledWidth - clonedScaledWidth) > 0.0001 ||
+          Math.abs(originalScaledHeight - clonedScaledHeight) > 0.0001) {
+          img.scaleToWidth(originalScaledWidth);
+          img.scaleToHeight(originalScaledHeight);
+        }
+
+        if (jsonObjects[index + 1] && jsonObjects[index + 1].type === 'textbox') {
+          imgLinkedTextBox = new fabric.Textbox(jsonObjects[index + 1].text);
+          setCanvasDiagramElementTextBoxAttributes(imgLinkedTextBox);
+
+          imgLinkedTextBox.set({
+            fontSize: jsonObjects[index + 1].fontSize,
+            textAlign: jsonObjects[index + 1].textAlign
+          });
+
+          if (includeAndExtendsTextImages.includes(img.imageUrl)) {
+            imgLinkedTextBox.set({
+              editable: true,
+              evented: true,
+              hasControls: true,
+              hasBorders: true,
+              selectable: true
+            });
+
+            imgLinkedTextBox.setControlsVisibility({
+              mtr: false,
+              mt: false,
+              mb: false,
+              ml: false,
+              mr: false,
+              bl: true,
+              br: true,
+              tl: true,
+              tr: true,
+            });
+          }
+
+          img.linkedText = imgLinkedTextBox;
+
+        }
+
+        setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
+        diagramsMakerCanvas.add(img);
+
+        if (img.linkedText) {
+          diagramsMakerCanvas.add(imgLinkedTextBox);
+          img.linkedText.bringForward();
+        }
+
+        diagramsMakerCanvas.renderAll();
+
+      });
+    }
+  });
+}
+
+function handleCanvasObjectEvent(event) {
+  const selectedElements = event.target;
+
+  if (selectedElements.type === 'activeSelection') {
+    selectedElements._objects.forEach((obj) => {
+      if (obj.linkedText && !includeAndExtendsTextImages.includes(obj.imageUrl)) {
+        obj.linkedText.visible = false;
       }
     });
+  } else if (selectedElements.linkedText && !includeAndExtendsTextImages.includes(selectedElements.imageUrl)) {
+    updateLinkedTextPositionForCanvasElement(selectedElements);
   }
+}
 
-  function handleCanvasObjectEvent(event) {
-    const selectedElements = event.target;
+function lockSelectionControls() {
+  const activeObject = diagramsMakerCanvas.getActiveObject();
 
-    if (selectedElements.type === 'activeSelection') {
-      selectedElements._objects.forEach((obj) => {
-        if (obj.linkedText && !includeAndExtendsTextImages.includes(obj.imageUrl)) {
-          obj.linkedText.visible = false;
-        }
-      });
-    } else if (selectedElements.linkedText && !includeAndExtendsTextImages.includes(selectedElements.imageUrl)) {
-      updateLinkedTextPositionForCanvasElement(selectedElements);
-    }
-  }
+  if (activeObject && activeObject.type === 'activeSelection') {
+    activeObject.set({
+      hasControls: false, // No rotation/scaling controls
+      lockScalingX: true,
+      lockScalingY: true,
+      lockRotation: true,
+    });
 
-  function lockSelectionControls() {
-    const activeObject = diagramsMakerCanvas.getActiveObject();
-
-    if (activeObject && activeObject.type === 'activeSelection') {
-      activeObject.set({
-        hasControls: false, // No rotation/scaling controls
-        lockScalingX: true,
-        lockScalingY: true,
-        lockRotation: true,
-      });
-
-      activeObject.getObjects().forEach((obj) => {
-        obj.set({
-          lockMovementX: false,
-          lockMovementY: false,
-          selectable: true,
-          evented: true,
-        });
-      });
-
-      diagramsMakerCanvas.renderAll();
-    }
-  }
-
-  function setCanvasDiagramElementAttributes(img) {
-    img.scaleToWidth(100);
-    img.scaleToHeight(75);
-
-    if (notRotatingImages.includes(img.imageUrl)) {
-      img.set({
+    activeObject.getObjects().forEach((obj) => {
+      obj.set({
+        lockMovementX: false,
+        lockMovementY: false,
         selectable: true,
-        fill: 'black'
+        evented: true,
       });
-
-      img.set({
-        hasRotatingPoint: false,
-        lockRotation: true
-      });
-
-      img.setControlsVisibility({
-        mtr: false
-      });
-    }
-
-    if (notScalingImages.includes(img.imageUrl)) {
-      img.set({ hasControls: false });
-    }
-
-    if (notScalingXAndYImages.includes(img.imageUrl)) {
-      img.setControlsVisibility({
-        mt: false,
-        mb: false,
-        ml: false,
-        mr: false,
-        bl: true,
-        br: true,
-        tl: true,
-        tr: true
-      });
-    }
-
-    if (notScalingYAndFlipImages.includes(img.imageUrl)) {
-      img.setControlsVisibility({
-        mt: false,
-        mb: false,
-        ml: true,
-        mr: true,
-        bl: false,
-        br: false,
-        tl: false,
-        tr: false
-      });
-    }
-  }
-
-  function setCanvasDiagramElementTextBoxAttributes(textBox) {
-    textBox.set({
-      width: 100 * 0.75,
-      height: 75,
-      fontSize: 16,
-      fontFamily: 'Arial',
-      fontStyle: 'normal',
-      fontWeight: 'bold',
-      textAlign: 'center',
-      borderColor: 'gray',
-      cornerColor: 'blue',
-      visible: true,
-      editable: false,
-      evented: false,
-      hasControls: false,
-      hasBorders: false,
-      selectable: false,
-      padding: 5
-    });
-  }
-
-  function setCombinedCanvasDiagramElementAndTextBoxAttributes(img) {
-    img.on('scaling', () => {
-      if (img.linkedText) {
-        img.linkedText.set({
-          width: img.getScaledWidth() * 0.75,
-          height: img.getScaledHeight()
-        });
-
-        if (!includeAndExtendsTextImages.includes(img.imageUrl)) {
-          updateLinkedTextPositionForCanvasElement(img);
-        }
-      }
     });
 
-    img.on('rotating', () => {
-      if (img.linkedText && !includeAndExtendsTextImages.includes(img.imageUrl)) {
-        updateLinkedTextPositionForCanvasElement(img);
-      }
-    });
-
-    img.on('selected', () => {
-      const activeObjects = diagramsMakerCanvas.getActiveObjects();
-
-      if (selectedCanvasObjectsForEdit.includes(img)) {
-        const index = selectedCanvasObjectsForEdit.indexOf(img);
-        if (index !== -1) {
-          selectedCanvasObjectsForEdit.splice(index, 1);
-        }
-      }
-
-      if (img.linkedText && !includeAndExtendsTextImages.includes(img.imageUrl)) {
-        selectedElementTextInput.value = img.linkedText.text;
-        textFontSizeInput.value = img.linkedText.fontSize;
-
-        if (activeObjects.length === 1) {
-          updateLinkedTextPositionForCanvasElement(img);
-        }
-      }
-
-      selectedCanvasObjectsForEdit.push(img);
-      selectedCanvasObjectsForDelete.push(img);
-
-      if (activeObjects.length > 1) {
-        nonSelectedImageDiv.style.display = 'block';
-        selectedImageDiv.style.display = 'none';
-        return;
-      }
-
-      if (normalTextImages.includes(img.imageUrl)) {
-        textH2.style.display = 'flex';
-        selectedElementTextInputDiv.style.display = 'flex';
-        textModifiersDiv.style.display = 'flex';
-        includeExtendsInputsDiv.style.display = 'none';
-        positioningDiv.style.display = 'block';
-      }
-
-      if (notTextImages.includes(img.imageUrl)) {
-        textH2.style.display = 'none';
-        selectedElementTextInputDiv.style.display = 'none';
-        textModifiersDiv.style.display = 'none';
-        includeExtendsInputsDiv.style.display = 'none';
-        positioningDiv.style.display = 'block';
-      }
-
-      if (includeAndExtendsTextImages.includes(img.imageUrl)) {
-        textH2.style.display = 'flex';
-        selectedElementTextInputDiv.style.display = 'none';
-        textModifiersDiv.style.display = 'none';
-        includeExtendsInputsDiv.style.display = 'flex';
-        positioningDiv.style.display = 'block';
-
-        if (img.linkedText.text === "<<include>>") {
-          includeInput.checked = true;
-          extendsInput.checked = false;
-        }
-
-        if (img.linkedText.text === "<<extends>>") {
-          includeInput.checked = false;
-          extendsInput.checked = true;
-        }
-      }
-
-      nonSelectedImageDiv.style.display = 'none';
-      selectedImageDiv.style.display = 'block';
-    });
-  }
-
-  function saveCanvasState() {
-    canvasHistory.push(diagramsMakerCanvas.toJSON());
-  }
-
-  function updateLinkedTextPositionForCanvasElement(canvasElement) {
-    if (!canvasElement.linkedText) return;
-
-    const { linkedText } = canvasElement;
-    const scaledWidth = canvasElement.width * canvasElement.scaleX;
-    const scaledHeight = canvasElement.height * canvasElement.scaleY;
-
-    // Update linked text position based on categories
-    if (centeredImages.includes(canvasElement.imageUrl)) {
-      linkedText.left = canvasElement.left + scaledWidth / 2 - linkedText.width / 2;
-      linkedText.top = canvasElement.top + scaledHeight / 2 - linkedText.height / 2;
-    } else if (belowImages.includes(canvasElement.imageUrl)) {
-      linkedText.left = canvasElement.left + scaledWidth / 2 - linkedText.width / 2;
-      linkedText.top = canvasElement.top + scaledHeight;
-    } else if (aboveImages.includes(canvasElement.imageUrl)) {
-      linkedText.left = canvasElement.left + scaledWidth / 2 - linkedText.width / 2;
-      linkedText.top = canvasElement.top - linkedText.height;
-    }
-
-    // Update linked text coordinates
-    linkedText.setCoords();
-  }
-
-  function zoomCanvas(factor) {
-    canvasZoomLevel = Math.max(0.2, Math.min(3, canvasZoomLevel * factor)); // Limit zoom between 0.2x and 3x
-    diagramsMakerCanvas.setZoom(canvasZoomLevel);
     diagramsMakerCanvas.renderAll();
   }
+}
 
-  saveCanvasState();
-});
+function setCanvasDiagramElementAttributes(img) {
+  img.scaleToWidth(100);
+  img.scaleToHeight(75);
+
+  if (notRotatingImages.includes(img.imageUrl)) {
+    img.set({
+      selectable: true,
+      fill: 'black'
+    });
+
+    img.set({
+      hasRotatingPoint: false,
+      lockRotation: true
+    });
+
+    img.setControlsVisibility({
+      mtr: false
+    });
+  }
+
+  if (notScalingImages.includes(img.imageUrl)) {
+    img.set({ hasControls: false });
+  }
+
+  if (notScalingXAndYImages.includes(img.imageUrl)) {
+    img.setControlsVisibility({
+      mt: false,
+      mb: false,
+      ml: false,
+      mr: false,
+      bl: true,
+      br: true,
+      tl: true,
+      tr: true
+    });
+  }
+
+  if (notScalingYAndFlipImages.includes(img.imageUrl)) {
+    img.setControlsVisibility({
+      mt: false,
+      mb: false,
+      ml: true,
+      mr: true,
+      bl: false,
+      br: false,
+      tl: false,
+      tr: false
+    });
+  }
+}
+
+function setCanvasDiagramElementTextBoxAttributes(textBox) {
+  textBox.set({
+    width: 100 * 0.75,
+    height: 75,
+    fontSize: 16,
+    fontFamily: 'Arial',
+    fontStyle: 'normal',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    borderColor: 'gray',
+    cornerColor: 'blue',
+    visible: true,
+    editable: false,
+    evented: false,
+    hasControls: false,
+    hasBorders: false,
+    selectable: false,
+    padding: 5
+  });
+}
+
+function setCombinedCanvasDiagramElementAndTextBoxAttributes(img) {
+  img.on('scaling', () => {
+    if (img.linkedText) {
+      img.linkedText.set({
+        width: img.getScaledWidth() * 0.75,
+        height: img.getScaledHeight()
+      });
+
+      if (!includeAndExtendsTextImages.includes(img.imageUrl)) {
+        updateLinkedTextPositionForCanvasElement(img);
+      }
+    }
+  });
+
+  img.on('rotating', () => {
+    if (img.linkedText && !includeAndExtendsTextImages.includes(img.imageUrl)) {
+      updateLinkedTextPositionForCanvasElement(img);
+    }
+  });
+
+  img.on('selected', () => {
+    const activeObjects = diagramsMakerCanvas.getActiveObjects();
+
+    if (selectedCanvasObjectsForEdit.includes(img)) {
+      const index = selectedCanvasObjectsForEdit.indexOf(img);
+      if (index !== -1) {
+        selectedCanvasObjectsForEdit.splice(index, 1);
+      }
+    }
+
+    if (img.linkedText && !includeAndExtendsTextImages.includes(img.imageUrl)) {
+      selectedElementTextInput.value = img.linkedText.text;
+      textFontSizeInput.value = img.linkedText.fontSize;
+
+      if (activeObjects.length === 1) {
+        updateLinkedTextPositionForCanvasElement(img);
+      }
+    }
+
+    selectedCanvasObjectsForEdit.push(img);
+    selectedCanvasObjectsForDelete.push(img);
+
+    if (activeObjects.length > 1) {
+      nonSelectedImageDiv.style.display = 'block';
+      selectedImageDiv.style.display = 'none';
+      return;
+    }
+
+    if (normalTextImages.includes(img.imageUrl)) {
+      textH2.style.display = 'flex';
+      selectedElementTextInputDiv.style.display = 'flex';
+      textModifiersDiv.style.display = 'flex';
+      includeExtendsInputsDiv.style.display = 'none';
+      positioningDiv.style.display = 'block';
+    }
+
+    if (notTextImages.includes(img.imageUrl)) {
+      textH2.style.display = 'none';
+      selectedElementTextInputDiv.style.display = 'none';
+      textModifiersDiv.style.display = 'none';
+      includeExtendsInputsDiv.style.display = 'none';
+      positioningDiv.style.display = 'block';
+    }
+
+    if (includeAndExtendsTextImages.includes(img.imageUrl)) {
+      textH2.style.display = 'flex';
+      selectedElementTextInputDiv.style.display = 'none';
+      textModifiersDiv.style.display = 'none';
+      includeExtendsInputsDiv.style.display = 'flex';
+      positioningDiv.style.display = 'block';
+
+      if (img.linkedText.text === "<<include>>") {
+        includeInput.checked = true;
+        extendsInput.checked = false;
+      }
+
+      if (img.linkedText.text === "<<extends>>") {
+        includeInput.checked = false;
+        extendsInput.checked = true;
+      }
+    }
+
+    nonSelectedImageDiv.style.display = 'none';
+    selectedImageDiv.style.display = 'block';
+  });
+}
+
+function sendCurrentCanvasStateToAllConnectedClients() {
+  if (canvasHistory.length > 1) {
+    const latestObjects = canvasHistory[canvasHistory.length - 1].objects;
+    const jsonString = JSON.stringify(latestObjects);
+
+    try {
+      // Split the JSON string into manageable chunks
+      const chunkSize = 1024; // 1KB chunks
+      const totalChunks = Math.ceil(jsonString.length / chunkSize);
+
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = jsonString.slice(i * chunkSize, (i + 1) * chunkSize);
+
+        // Send each chunk with metadata if needed
+        socket.send(JSON.stringify({
+          type: "chunk",
+          chunkNumber: i + 1,
+          totalChunks,
+          data: chunk,
+        }));
+      }
+
+      console.log(`Canvas state sent in ${totalChunks} chunks.`);
+    } catch (error) {
+      console.error("Error sending canvas state to clients:", error);
+    }
+  }
+}
+
+function updateLinkedTextPositionForCanvasElement(canvasElement) {
+  if (!canvasElement.linkedText) return;
+
+  const { linkedText } = canvasElement;
+  const scaledWidth = canvasElement.width * canvasElement.scaleX;
+  const scaledHeight = canvasElement.height * canvasElement.scaleY;
+
+  // Update linked text position based on categories
+  if (centeredImages.includes(canvasElement.imageUrl)) {
+    linkedText.left = canvasElement.left + scaledWidth / 2 - linkedText.width / 2;
+    linkedText.top = canvasElement.top + scaledHeight / 2 - linkedText.height / 2;
+  } else if (belowImages.includes(canvasElement.imageUrl)) {
+    linkedText.left = canvasElement.left + scaledWidth / 2 - linkedText.width / 2;
+    linkedText.top = canvasElement.top + scaledHeight;
+  } else if (aboveImages.includes(canvasElement.imageUrl)) {
+    linkedText.left = canvasElement.left + scaledWidth / 2 - linkedText.width / 2;
+    linkedText.top = canvasElement.top - linkedText.height;
+  }
+
+  // Update linked text coordinates
+  linkedText.setCoords();
+}
+
+function zoomCanvas(factor) {
+  canvasZoomLevel = Math.max(0.2, Math.min(3, canvasZoomLevel * factor)); // Limit zoom between 0.2x and 3x
+  diagramsMakerCanvas.setZoom(canvasZoomLevel);
+  diagramsMakerCanvas.renderAll();
+}
+
+
+//This function is only to be executed by diagrammings_server_connection.js
+export function clearCanvas() {
+  diagramsMakerCanvas.clear();
+}
