@@ -36,6 +36,7 @@ let canvasZoomLevel = 1;
 let canvasIsPanning = false;
 let canvasLastPanPosition = { x: 0, y: 0 };
 
+let previouslySelectedObjects = [];
 let selectedCanvasObjectsForEdit = [];
 let selectedCanvasObjectsForDelete = [];
 let copiedOrCutCanvasObjects = [];
@@ -221,6 +222,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   diagramsMakerCanvas.on('selection:cleared', () => {
+    const deselectedObjects = previouslySelectedObjects;
+    socket.send(JSON.stringify({ type: "unlock", objects: deselectedObjects }));
+    previouslySelectedObjects = [];
+
     diagramsMakerCanvas.getObjects('image').forEach((img) => {
       updateLinkedTextPositionForCanvasElement(img);
 
@@ -231,12 +236,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     diagramsMakerCanvas.renderAll();
-
     selectedCanvasObjectsForDelete = [];
   });
 
-  diagramsMakerCanvas.on('selection:created', lockSelectionControls);
-  diagramsMakerCanvas.on('selection:updated', lockSelectionControls);
+  diagramsMakerCanvas.on('selection:created', (event) => {
+    lockSelectionControls();
+    previouslySelectedObjects = event.selected;
+    socket.send(JSON.stringify({ type: "lock", objects: previouslySelectedObjects }));
+  });
+
+  diagramsMakerCanvas.on('selection:updated', (event) => {
+    lockSelectionControls();
+    previouslySelectedObjects = event.selected;
+    socket.send(JSON.stringify({ type: "lock", objects: previouslySelectedObjects }));
+  });
 
   document.addEventListener('keydown', (event) => {
     if (event.ctrlKey && event.key === 'z') {
@@ -1108,7 +1121,44 @@ function zoomCanvas(factor) {
 }
 
 
-//This function is only to be executed by diagrammings_server_connection.js
+//This functiona is only to be executed by diagrammings_server_connection.js
 export function clearCanvas() {
   diagramsMakerCanvas.clear();
+}
+
+export function lockCanvasObjects(canvasObjectsToLock) {
+  canvasObjectsToLock.forEach((lockObject) => {
+    const canvasObjectToLock = diagramsMakerCanvas.getObjects().find(obj => obj.id === lockObject.id);
+    if (canvasObjectToLock) {
+      canvasObjectToLock.set({
+        editable: false,
+        evented: false,
+        hasControls: false,
+        hasBorders: false,
+        selectable: false,
+      });
+    }
+  });
+
+  diagramsMakerCanvas.renderAll();
+
+  selectedImageDiv.style.display = 'none';
+  nonSelectedImageDiv.style.display = 'block';
+}
+
+export function unlockCanvasObjects(canvasObjectsToUnlock) {
+  canvasObjectsToUnlock.forEach((unlockObject) => {
+    const canvasObjectToLock = diagramsMakerCanvas.getObjects().find(obj => obj.id === unlockObject.id);
+    if (canvasObjectToLock) {
+      canvasObjectToLock.set({
+        editable: true,
+        evented: true,
+        hasControls: true,
+        hasBorders: true,
+        selectable: true,
+      });
+    }
+  });
+
+  diagramsMakerCanvas.renderAll();
 }

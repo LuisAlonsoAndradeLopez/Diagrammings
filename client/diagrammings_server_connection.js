@@ -1,4 +1,4 @@
-import { clearCanvas, generateCanvasElementsFromCanvasState } from "./script.js";
+import { clearCanvas, generateCanvasElementsFromCanvasState, lockCanvasObjects, unlockCanvasObjects } from "./script.js";
 
 export const socket = new WebSocket("ws://localhost:8080/diagrammings/canvas");
 
@@ -11,6 +11,8 @@ socket.onopen = () => {
 
 socket.onmessage = (event) => {
     const message = JSON.parse(event.data);
+
+    console.log(message);
 
     if (message.type === "chunk") {
         receivedChunks.push(message.data);
@@ -29,8 +31,14 @@ socket.onmessage = (event) => {
             receivedChunks = [];
             totalExpectedChunks = null;
         }
-    } else {
-        console.warn("Unexpected message type:", message.type);
+    }
+
+    if (message.type === "lock") {
+        lockCanvasObjects(message.objects);        
+    }
+
+    if (message.type === "unlock") {
+        unlockCanvasObjects(message.objects);
     }
 };
 
