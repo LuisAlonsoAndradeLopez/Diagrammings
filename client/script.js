@@ -203,14 +203,14 @@ document.addEventListener('DOMContentLoaded', () => {
       canvasLastPanPosition.y = event.e.clientY;
     }
 
-    //const cursorData = {
-    //  x: mousePointer.x,
-    //  y: mousePointer.y,
-    //  userId: userId,
-    //};
-//
-    //// Send cursor data to the WebSocket server
-    //socket.send(JSON.stringify({ type: "cursorData", objects: cursorData }));
+    const cursorData = {
+      x: mousePointer.x,
+      y: mousePointer.y,
+      userId: userId,
+    };
+
+    // Send cursor data to the WebSocket server
+    socket.send(JSON.stringify({ type: "cursorData", objects: cursorData }));
   });
 
   diagramsMakerCanvas.on('mouse:up', () => {
@@ -278,7 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const jsonObjects = canvasHistory[canvasHistory.length - 1].objects;
         clearCanvas();
-        console.log(jsonObjects);
         generateCanvasElementsFromCanvasState(jsonObjects);
         diagramsMakerCanvas.renderAll();
         sendCurrentCanvasStateToAllConnectedClients();
@@ -542,8 +541,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   helpButton.addEventListener('click', () => {
     alert(`
-      *Callback y guardado de estado para botones de posicionamiento
-      *Selección y deselección de elementos entre clientes bien hecho por favor
+      *Callback cuando elemento cambia de posicionamiento bien por favor (borones en frente, atras, etc).
+      *Cuando un cliente se desconecta, el cursor del cliente desconectado debe desaparecer de todos los clientes.
+      *Selección y deselección de elementos entre clientes bien hecho por favor.
+      *No hay buen callback cuando los elementos se giran.
 
       *Ctrl + Z: Revertir cambios.
       *Ctrl + Y: Recuperar elementos de la reversión de cambios. 
@@ -558,6 +559,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   exportButton.addEventListener('click', () => {
+    Object.values(connectedRemoteCursors).forEach(obj => diagramsMakerCanvas.remove(obj));
+
     if (diagramsMakerCanvas.getObjects().length > 0) {
       const originalWidth = diagramsMakerCanvas.getWidth();
       const originalHeight = diagramsMakerCanvas.getHeight();
@@ -616,6 +619,8 @@ document.addEventListener('DOMContentLoaded', () => {
         obj.top += bounds.minY;
         obj.setCoords();
       });
+
+      Object.values(connectedRemoteCursors).forEach(obj => diagramsMakerCanvas.add(obj));
 
       diagramsMakerCanvas.renderAll();
 
@@ -1151,8 +1156,8 @@ function zoomCanvas(factor) {
 //Functions for use for both scripts.js and diagrammings_server_connection.js
 export function clearCanvas() {
   diagramsMakerCanvas.clear();
-  //connectedRemoteCursors.forEach(obj => diagramsMakerCanvas.add(obj));
-  //diagramsMakerCanvas.renderAll();
+  Object.values(connectedRemoteCursors).forEach(obj => diagramsMakerCanvas.add(obj));
+  diagramsMakerCanvas.renderAll();
 }
 
 //This functions is only to be executed by diagrammings_server_connection.js
@@ -1195,7 +1200,6 @@ export function unlockCanvasObjects(canvasObjectsToUnlock) {
 }
 
 export function renderRemoteCursors(remoteCursor) {
-  console.log(remoteCursor)
   const { x, y, userId } = remoteCursor;
 
   if (!connectedRemoteCursors[userId]) {

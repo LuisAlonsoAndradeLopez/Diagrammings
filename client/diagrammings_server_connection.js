@@ -42,12 +42,13 @@ socket.onmessage = (event) => {
     }
 
     if (message.type === "cursorData") {
-        //renderRemoteCursors(message.objects);
+        renderRemoteCursors(message.objects);
     }
 };
 
 
 socket.onclose = function (event) {
+    console.log(event);
     console.log('WebSocket closed:', event);
 };
 
