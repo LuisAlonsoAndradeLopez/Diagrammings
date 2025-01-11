@@ -1,0 +1,2 @@
+npm install sockjs-client @stomp/stompjs
+npm install --save-dev webpack webpack-cli

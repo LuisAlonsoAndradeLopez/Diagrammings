@@ -1,4 +1,4 @@
-import { clearCanvas, generateCanvasElementsFromCanvasState, lockCanvasObjects, unlockCanvasObjects, renderRemoteCursors } from "./script.js";
+import { clearCanvas, generateCanvasElementsFromCanvasState, lockCanvasObjects, unlockCanvasObjects, removeDisconnectedClientCursor, renderRemoteCursors } from "./script.js";
 
 export const socket = new WebSocket("ws://localhost:8080/diagrammings/canvas");
 
@@ -34,7 +34,7 @@ socket.onmessage = (event) => {
     }
 
     if (message.type === "lock") {
-        lockCanvasObjects(message.objects);        
+        lockCanvasObjects(message.objects);
     }
 
     if (message.type === "unlock") {
@@ -44,11 +44,14 @@ socket.onmessage = (event) => {
     if (message.type === "cursorData") {
         renderRemoteCursors(message.objects);
     }
+
+    if (message.type === "disconnect") {
+        removeDisconnectedClientCursor(message.objects);
+    }
 };
 
 
 socket.onclose = function (event) {
-    console.log(event);
     console.log('WebSocket closed:', event);
 };
 

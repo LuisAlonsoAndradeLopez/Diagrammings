@@ -54,6 +54,15 @@ const centeredImages = [
   'process.png', 'start_end.png', 'use_case.png'
 ];
 
+const flowDiagramImages = [
+  'decision.png', 'document.png', 'flow.png', 'input_output.png', 'off_page_reference.png', 'on_page_reference.png',
+  'process.png', 'start_end.png'
+];
+
+const useCaseDiagramImages = [
+  'actor.png', 'asociation.png', 'dependency.png', 'generalization.png', 'system.png', 'use_case.png'
+];
+
 const includeAndExtendsTextImages = ['dependency.png'];
 
 const normalTextImages = [
@@ -112,7 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     fabric.Image.fromURL(imageUrl, (img) => {
       let textBox;
-      img.imageUrl = imageUrl.split('/').pop();
+      img.set({
+        crossOrigin: 'Anonymous',
+        imageUrl: imageUrl.split('/').pop()
+      });
 
       setCanvasDiagramElementAttributes(img);
 
@@ -542,9 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
   helpButton.addEventListener('click', () => {
     alert(`
       *Callback cuando elemento cambia de posicionamiento bien por favor (borones en frente, atras, etc).
-      *Cuando un cliente se desconecta, el cursor del cliente desconectado debe desaparecer de todos los clientes.
       *Selección y deselección de elementos entre clientes bien hecho por favor.
-      *No hay buen callback cuando los elementos se giran.
 
       *Ctrl + Z: Revertir cambios.
       *Ctrl + Y: Recuperar elementos de la reversión de cambios. 
@@ -810,93 +820,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  canvasHistory.push(diagramsMakerCanvas.toJSON());
-});
-
-
-//This function can be used in the current file and diagrammings_server_connection
-export function generateCanvasElementsFromCanvasState(jsonObjects) {
-  jsonObjects.forEach((obj, index) => {
-    if (obj.type === 'image') {
-      fabric.Image.fromURL(obj.src, (img) => {
-        img.set({
-          imageUrl: obj.src.split('/').pop()
-        });
-
-        let imgLinkedTextBox;
-        setCanvasDiagramElementAttributes(img);
-
-        img.set({
-          scaleX: obj.scaleX,
-          scaleY: obj.scaleY,
-          left: obj.left,
-          top: obj.top,
-          width: obj.width,
-          height: obj.height
-        });
-
-        const originalScaledWidth = obj.width * obj.scaleX;
-        const originalScaledHeight = obj.height * obj.scaleY;
-
-        const clonedScaledWidth = img.getScaledWidth();
-        const clonedScaledHeight = img.getScaledHeight();
-
-        // Force synchronization if there is any mismatch
-        if (Math.abs(originalScaledWidth - clonedScaledWidth) > 0.0001 ||
-          Math.abs(originalScaledHeight - clonedScaledHeight) > 0.0001) {
-          img.scaleToWidth(originalScaledWidth);
-          img.scaleToHeight(originalScaledHeight);
-        }
-
-        if (jsonObjects[index + 1] && jsonObjects[index + 1].type === 'textbox') {
-          imgLinkedTextBox = new fabric.Textbox(jsonObjects[index + 1].text);
-          setCanvasDiagramElementTextBoxAttributes(imgLinkedTextBox);
-
-          imgLinkedTextBox.set({
-            fontSize: jsonObjects[index + 1].fontSize,
-            textAlign: jsonObjects[index + 1].textAlign
-          });
-
-          if (includeAndExtendsTextImages.includes(img.imageUrl)) {
-            imgLinkedTextBox.set({
-              editable: true,
-              evented: true,
-              hasControls: true,
-              hasBorders: true,
-              selectable: true
-            });
-
-            imgLinkedTextBox.setControlsVisibility({
-              mtr: false,
-              mt: false,
-              mb: false,
-              ml: false,
-              mr: false,
-              bl: true,
-              br: true,
-              tl: true,
-              tr: true,
-            });
-          }
-
-          img.linkedText = imgLinkedTextBox;
-
-        }
-
-        setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
-        diagramsMakerCanvas.add(img);
-
-        if (img.linkedText) {
-          diagramsMakerCanvas.add(imgLinkedTextBox);
-          img.linkedText.bringForward();
-        }
-
-        diagramsMakerCanvas.renderAll();
-
-      });
+  window.addEventListener("beforeunload", () => {
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: "disconnect", objects: userId }));
     }
   });
-}
+
+  canvasHistory.push(diagramsMakerCanvas.toJSON());
+});
 
 function handleCanvasObjectEvent(event) {
   const selectedElements = event.target;
@@ -1160,6 +1091,102 @@ export function clearCanvas() {
   diagramsMakerCanvas.renderAll();
 }
 
+export function generateCanvasElementsFromCanvasState(jsonObjects) {
+  jsonObjects.forEach((obj, index) => {
+    if (obj.type === 'image') {
+      const remoteObjectSource = obj.src.split('/').pop();
+      let generatedCanvasElementSource;
+
+      if (flowDiagramImages.includes(remoteObjectSource)) {
+        generatedCanvasElementSource = './assets/images/flow_diagram_elements/' + remoteObjectSource;
+      }
+
+      if (useCaseDiagramImages.includes(remoteObjectSource)) {
+        generatedCanvasElementSource = './assets/images/use_case_diagram_elements/' + remoteObjectSource;
+      }
+
+      fabric.Image.fromURL(generatedCanvasElementSource, (img) => {
+        img.set({
+          crossOrigin: 'Anonymous',
+          imageUrl: remoteObjectSource,
+        });
+
+        let imgLinkedTextBox;
+        setCanvasDiagramElementAttributes(img);
+
+        img.set({
+          scaleX: obj.scaleX,
+          scaleY: obj.scaleY,
+          left: obj.left,
+          top: obj.top,
+          width: obj.width,
+          height: obj.height,
+          angle: obj.angle
+        });
+
+        const originalScaledWidth = obj.width * obj.scaleX;
+        const originalScaledHeight = obj.height * obj.scaleY;
+
+        const clonedScaledWidth = img.getScaledWidth();
+        const clonedScaledHeight = img.getScaledHeight();
+
+        // Force synchronization if there is any mismatch
+        if (Math.abs(originalScaledWidth - clonedScaledWidth) > 0.0001 ||
+          Math.abs(originalScaledHeight - clonedScaledHeight) > 0.0001) {
+          img.scaleToWidth(originalScaledWidth);
+          img.scaleToHeight(originalScaledHeight);
+        }
+
+        if (jsonObjects[index + 1] && jsonObjects[index + 1].type === 'textbox') {
+          imgLinkedTextBox = new fabric.Textbox(jsonObjects[index + 1].text);
+          setCanvasDiagramElementTextBoxAttributes(imgLinkedTextBox);
+
+          imgLinkedTextBox.set({
+            fontSize: jsonObjects[index + 1].fontSize,
+            textAlign: jsonObjects[index + 1].textAlign
+          });
+
+          if (includeAndExtendsTextImages.includes(img.imageUrl)) {
+            imgLinkedTextBox.set({
+              editable: true,
+              evented: true,
+              hasControls: true,
+              hasBorders: true,
+              selectable: true
+            });
+
+            imgLinkedTextBox.setControlsVisibility({
+              mtr: false,
+              mt: false,
+              mb: false,
+              ml: false,
+              mr: false,
+              bl: true,
+              br: true,
+              tl: true,
+              tr: true,
+            });
+          }
+
+          img.linkedText = imgLinkedTextBox;
+
+        }
+
+        setCombinedCanvasDiagramElementAndTextBoxAttributes(img);
+        diagramsMakerCanvas.add(img);
+
+        if (img.linkedText) {
+          diagramsMakerCanvas.add(imgLinkedTextBox);
+          img.linkedText.bringForward();
+        }
+
+        diagramsMakerCanvas.renderAll();
+
+      });
+    }
+  });
+}
+
 //This functions is only to be executed by diagrammings_server_connection.js
 export function lockCanvasObjects(canvasObjectsToLock) {
   selectedImageDiv.style.display = 'none';
@@ -1197,6 +1224,22 @@ export function unlockCanvasObjects(canvasObjectsToUnlock) {
   });
 
   diagramsMakerCanvas.renderAll();
+}
+
+export function removeDisconnectedClientCursor(disconnectedUserId) {
+  if (connectedRemoteCursors[disconnectedUserId]) {
+    connectedRemoteCursors[disconnectedUserId].remove();
+    delete connectedRemoteCursors[disconnectedUserId]; // Remove the entry to clean up
+  }
+
+  for (let obj of diagramsMakerCanvas.getObjects()) {
+    if (obj._objects && obj._objects[1].text === disconnectedUserId) {
+      diagramsMakerCanvas.remove(obj);
+      diagramsMakerCanvas.remove(obj.linkedText);
+      diagramsMakerCanvas.renderAll();
+      break;
+    }
+  }
 }
 
 export function renderRemoteCursors(remoteCursor) {
