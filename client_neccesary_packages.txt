@@ -1,0 +1,6 @@
+For run the client, you should execute this commands one by one
+But first, you should have Node.JS installed
+
+npm install fabric
+npm install sockjs-client @stomp/stompjs
+npm install --save-dev webpack webpack-cli

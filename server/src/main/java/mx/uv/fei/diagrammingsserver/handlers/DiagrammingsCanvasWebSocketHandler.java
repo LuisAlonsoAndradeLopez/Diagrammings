@@ -18,8 +18,10 @@ public class DiagrammingsCanvasWebSocketHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         for (WebSocketSession s : sessions) {
-            if (s.isOpen() && s != session) {
-                s.sendMessage(message);
+            synchronized (session) {
+                if (s.isOpen() && s != session) {
+                    s.sendMessage(message);
+                }
             }
         }
     }
