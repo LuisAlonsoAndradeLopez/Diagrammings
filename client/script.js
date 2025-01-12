@@ -185,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
       canvasHistory.push(diagramsMakerCanvas.toJSON());
       sendCurrentCanvasStateToAllConnectedClients();
       previouslySelectedObjects = diagramsMakerCanvas.getActiveObjects();
-      socket.send(JSON.stringify({ type: "lock", objects: previouslySelectedObjects }));
     });
   });
 
@@ -249,8 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   diagramsMakerCanvas.on('selection:cleared', () => {
-    const deselectedObjects = previouslySelectedObjects;
-    socket.send(JSON.stringify({ type: "unlock", objects: deselectedObjects }));
     previouslySelectedObjects = [];
 
     diagramsMakerCanvas.getObjects('image').forEach((img) => {
@@ -267,18 +264,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   diagramsMakerCanvas.on('selection:created', (event) => {
-    console.log("de burro");
     lockSelectionControls();
     previouslySelectedObjects = event.selected;
-    socket.send(JSON.stringify({ type: "lock", objects: previouslySelectedObjects }));
   });
 
 
   diagramsMakerCanvas.on('selection:updated', (event) => {
-    console.log("Pene");
     lockSelectionControls();
     previouslySelectedObjects = event.selected;
-    socket.send(JSON.stringify({ type: "lock", objects: previouslySelectedObjects }));
   });
 
   document.addEventListener('keydown', (event) => {
@@ -517,7 +510,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       previouslySelectedObjects = pastedObjects;
-      socket.send(JSON.stringify({ type: "lock", objects: previouslySelectedObjects }));
     }
 
     if (event.key === 'Backspace' && selectedCanvasObjectsForDelete.length > 0) {
@@ -553,9 +545,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   helpButton.addEventListener('click', () => {
     alert(`
-      *Callback cuando elemento cambia de posicionamiento bien por favor (borones en frente, atras, etc).
-      *Selección y deselección de elementos entre clientes bien hecho por favor.
-
       *Ctrl + Z: Revertir cambios.
       *Ctrl + Y: Recuperar elementos de la reversión de cambios. 
       *Ctrl + C: Copiar elementos seleccionados.
@@ -685,9 +674,15 @@ document.addEventListener('DOMContentLoaded', () => {
           diagramsMakerCanvas.bringForward(objectForBringForward.linkedText);
           diagramsMakerCanvas.bringForward(objectForBringForward);
           diagramsMakerCanvas.bringForward(objectForBringForward);
+          diagramsMakerCanvas.renderAll();
+          canvasHistory.push(diagramsMakerCanvas.toJSON());
+          sendCurrentCanvasStateToAllConnectedClients();
         } else {
           diagramsMakerCanvas.bringForward(objectForBringForward.linkedText);
           diagramsMakerCanvas.bringForward(objectForBringForward);
+          diagramsMakerCanvas.renderAll();
+          canvasHistory.push(diagramsMakerCanvas.toJSON());
+          sendCurrentCanvasStateToAllConnectedClients();
         }
       }
     } else {
@@ -695,61 +690,103 @@ document.addEventListener('DOMContentLoaded', () => {
         if (objectForComparisionBetweenTheNotLinkedTextObject.linkedText) {
           diagramsMakerCanvas.bringForward(objectForBringForward);
           diagramsMakerCanvas.bringForward(objectForBringForward);
+          diagramsMakerCanvas.renderAll();
+          canvasHistory.push(diagramsMakerCanvas.toJSON());
+          sendCurrentCanvasStateToAllConnectedClients();
         } else {
           diagramsMakerCanvas.bringForward(objectForBringForward);
+          diagramsMakerCanvas.renderAll();
+          canvasHistory.push(diagramsMakerCanvas.toJSON());
+          sendCurrentCanvasStateToAllConnectedClients();
         }
       }
     }
-
-    diagramsMakerCanvas.renderAll();
-    sendCurrentCanvasStateToAllConnectedClients();
   });
 
   setElementsBehindButton.addEventListener('click', () => {
     const canvasObjects = diagramsMakerCanvas.getObjects();
     const objectForBringBackwards = selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1];
     const selectedObjectOnCanvasObjectsIndex = canvasObjects.indexOf(objectForBringBackwards);
-    const objectForComparision = canvasObjects[selectedObjectOnCanvasObjectsIndex - 2];
+    let objectForComparision = canvasObjects[selectedObjectOnCanvasObjectsIndex - 1];
 
-    if (objectForBringBackwards.linkedText) {
-      if (objectForComparision) {
-        if (objectForComparision.linkedText) {
-          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
-          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
-          diagramsMakerCanvas.sendBackwards(objectForBringBackwards.linkedText);
-          diagramsMakerCanvas.sendBackwards(objectForBringBackwards.linkedText);
-        } else {
-          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
-          diagramsMakerCanvas.sendBackwards(objectForBringBackwards.linkedText);
-        }
-      }
-    } else {
-      if (objectForComparision) {
-        if (objectForComparision.linkedText) {
-          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
-          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
-        } else {
-          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
-        }
-      }
+    if (!objectForComparision || objectForComparision.type !== 'image') {
+      objectForComparision = canvasObjects[selectedObjectOnCanvasObjectsIndex - 2];
     }
 
-    diagramsMakerCanvas.renderAll();
-    sendCurrentCanvasStateToAllConnectedClients();
+    if (objectForComparision) {
+      if (objectForBringBackwards.linkedText) {
+        if (objectForComparision.linkedText) {
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards.linkedText);
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards.linkedText);
+          diagramsMakerCanvas.renderAll();
+          canvasHistory.push(diagramsMakerCanvas.toJSON());
+          sendCurrentCanvasStateToAllConnectedClients();
+        } else {
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards.linkedText);
+          diagramsMakerCanvas.renderAll();
+          canvasHistory.push(diagramsMakerCanvas.toJSON());
+          sendCurrentCanvasStateToAllConnectedClients();
+        }
+      } else {
+        if (objectForComparision.linkedText) {
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
+          diagramsMakerCanvas.renderAll();
+          canvasHistory.push(diagramsMakerCanvas.toJSON());
+          sendCurrentCanvasStateToAllConnectedClients();
+        } else {
+          diagramsMakerCanvas.sendBackwards(objectForBringBackwards);
+          diagramsMakerCanvas.renderAll();
+          canvasHistory.push(diagramsMakerCanvas.toJSON());
+          sendCurrentCanvasStateToAllConnectedClients();
+        }
+
+      }
+    }
   });
 
   setElementsInFrontButton.addEventListener('click', () => {
-    diagramsMakerCanvas.bringToFront(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-    diagramsMakerCanvas.bringToFront(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
-    diagramsMakerCanvas.renderAll();
-    sendCurrentCanvasStateToAllConnectedClients();
+    const canvasObjects = diagramsMakerCanvas.getObjects();
+    const objectForBringToFront = selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1];
+    const selectedObjectOnCanvasObjectsIndex = canvasObjects.indexOf(objectForBringToFront);
+    const objectForComparisionBetweenTheLinkedTextObject = canvasObjects[selectedObjectOnCanvasObjectsIndex + 2];
+    const objectForComparisionBetweenTheNotLinkedTextObject = canvasObjects[selectedObjectOnCanvasObjectsIndex + 1];
+
+    if (objectForBringToFront.linkedText) {
+      if (objectForComparisionBetweenTheLinkedTextObject) {
+        diagramsMakerCanvas.bringToFront(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+        diagramsMakerCanvas.bringToFront(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
+        diagramsMakerCanvas.renderAll();
+        canvasHistory.push(diagramsMakerCanvas.toJSON());
+        sendCurrentCanvasStateToAllConnectedClients();
+      }
+    } else {
+      if (objectForComparisionBetweenTheNotLinkedTextObject) {
+        diagramsMakerCanvas.bringToFront(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+        diagramsMakerCanvas.bringToFront(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
+        diagramsMakerCanvas.renderAll();
+        canvasHistory.push(diagramsMakerCanvas.toJSON());
+        sendCurrentCanvasStateToAllConnectedClients();
+      }
+    }
   });
 
   setElementsAtTheBottomButton.addEventListener('click', () => {
-    diagramsMakerCanvas.sendToBack(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
-    diagramsMakerCanvas.sendToBack(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
-    diagramsMakerCanvas.renderAll();
-    sendCurrentCanvasStateToAllConnectedClients();
+    const canvasObjects = diagramsMakerCanvas.getObjects();
+    const objectForBringToBack = selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1];
+    const selectedObjectOnCanvasObjectsIndex = canvasObjects.indexOf(objectForBringToBack);
+    const objectForComparision = canvasObjects[selectedObjectOnCanvasObjectsIndex - 1];
+
+    if (objectForComparision) {
+      diagramsMakerCanvas.sendToBack(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1].linkedText);
+      diagramsMakerCanvas.sendToBack(selectedCanvasObjectsForEdit[selectedCanvasObjectsForEdit.length - 1]);
+      diagramsMakerCanvas.renderAll();
+      canvasHistory.push(diagramsMakerCanvas.toJSON());
+      sendCurrentCanvasStateToAllConnectedClients();
+    }
   });
 
   textAlignLeftButton.addEventListener('click', () => {
@@ -829,6 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
   canvasHistory.push(diagramsMakerCanvas.toJSON());
 });
 
+//This functions are only to be executed by script.js
 function handleCanvasObjectEvent(event) {
   const selectedElements = event.target;
 
@@ -1048,7 +1086,6 @@ function sendCurrentCanvasStateToAllConnectedClients() {
         }));
       }
 
-      console.log(`Canvas state sent in ${totalChunks} chunks.`);
     } catch (error) {
       console.error("Error sending canvas state to clients:", error);
     }
@@ -1187,45 +1224,7 @@ export function generateCanvasElementsFromCanvasState(jsonObjects) {
   });
 }
 
-//This functions is only to be executed by diagrammings_server_connection.js
-export function lockCanvasObjects(canvasObjectsToLock) {
-  selectedImageDiv.style.display = 'none';
-  nonSelectedImageDiv.style.display = 'block';
-
-  canvasObjectsToLock.forEach((lockObject) => {
-    const canvasObjectToLock = diagramsMakerCanvas.getObjects().find(obj => obj.id === lockObject.id);
-    if (canvasObjectToLock) {
-      canvasObjectToLock.set({
-        editable: false,
-        evented: false,
-        hasControls: false,
-        hasBorders: false,
-        selectable: false,
-      });
-    }
-  });
-
-  diagramsMakerCanvas.renderAll();
-
-}
-
-export function unlockCanvasObjects(canvasObjectsToUnlock) {
-  canvasObjectsToUnlock.forEach((unlockObject) => {
-    const canvasObjectToLock = diagramsMakerCanvas.getObjects().find(obj => obj.id === unlockObject.id);
-    if (canvasObjectToLock) {
-      canvasObjectToLock.set({
-        editable: true,
-        evented: true,
-        hasControls: true,
-        hasBorders: true,
-        selectable: true,
-      });
-    }
-  });
-
-  diagramsMakerCanvas.renderAll();
-}
-
+//This functions are only to be executed by diagrammings_server_connection.js
 export function removeDisconnectedClientCursor(disconnectedUserId) {
   if (connectedRemoteCursors[disconnectedUserId]) {
     connectedRemoteCursors[disconnectedUserId].remove();

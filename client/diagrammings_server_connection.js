@@ -1,4 +1,4 @@
-import { clearCanvas, generateCanvasElementsFromCanvasState, lockCanvasObjects, unlockCanvasObjects, removeDisconnectedClientCursor, renderRemoteCursors } from "./script.js";
+import { clearCanvas, generateCanvasElementsFromCanvasState, removeDisconnectedClientCursor, renderRemoteCursors } from "./script.js";
 
 export const socket = new WebSocket("ws://localhost:8080/diagrammings/canvas");
 
@@ -11,8 +11,6 @@ socket.onopen = () => {
 
 socket.onmessage = (event) => {
     const message = JSON.parse(event.data);
-
-    console.log(message);
 
     if (message.type === "chunk") {
         receivedChunks.push(message.data);
@@ -31,14 +29,6 @@ socket.onmessage = (event) => {
             receivedChunks = [];
             totalExpectedChunks = null;
         }
-    }
-
-    if (message.type === "lock") {
-        lockCanvasObjects(message.objects);
-    }
-
-    if (message.type === "unlock") {
-        unlockCanvasObjects(message.objects);
     }
 
     if (message.type === "cursorData") {

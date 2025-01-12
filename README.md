@@ -1,2 +1,2 @@
 # Diagrammings
-The third project for Juan Luis's Revenge
+El tercer proyecto final para la Experiencia Educativa "Desarrollo de Sistemas Web".
